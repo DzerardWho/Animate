@@ -49,9 +49,9 @@ function initDemo(){
                 // test();
                 // b.clear();
             }
-            headimg.src = 'test/John_Egbert4.png'
+            headimg.src = 'test/smieci/John_Egbert4.png'
         }
-        img2.src = 'test/captor.png';
+        img2.src = 'test/smieci/captor.png';
     }
-    img.src = "test/John_Egbert3.png";
+    img.src = "test/smieci/John_Egbert3.png";
 }

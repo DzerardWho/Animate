@@ -5,6 +5,8 @@ import * as Angles from "./libs/angles.js";
 
 // We flashu obiekty rysowane (sprite'y, kształty) nie mogą mieć dzieci (chyba)
 
+// TODO: Timeline ???
+
 const dvs = `precision mediump float;
 
 attribute vec2 aPosition;
@@ -213,7 +215,7 @@ class Container {
 		y: number,
 		w: number,
 		h: number,
-		pivot: Object = { x: 0, y: 0 }
+		pivot: vec2 = { x: 0, y: 0 }
 	) {
 		this.localMatrix = glMatrix.mat3.identity(new Float32Array(9));
 		this.worldMatrix = glMatrix.mat3.identity(new Float32Array(9));
@@ -235,7 +237,6 @@ class Container {
 
 	updateWorldMatrix(parentWorldMatrix?: Float32Array) {
 		glMatrix.mat3.fromTranslation(this.localMatrix, [this.x, this.y]);
-		// this.moveTo(this.x, this.y);
 		this.scaleAndRotate(this.width, this.height, this.angle);
 		if (parentWorldMatrix) {
 			glMatrix.mat3.multiply(
@@ -282,27 +283,27 @@ class Container {
 		this.moveTo(-this.pivot["x"], -this.pivot["y"]);
 	}
 
-	createInstance() {
-		let instance = <instance>{};
-		instance.visible = true;
-		instance.x = this.x;
-		instance.y = this.y;
-		instance.scale = { x: this.scale.x, y: this.scale.y };
-		instance.angle = this.angle;
-		instance.source = this;
-		instance.localMatrix = new Float32Array(9);
-		instance.worldMatrix = new Float32Array(9);
-		instance.buffer = this.gl.createFramebuffer();
-		instance.children = [];
+	// createInstance() {
+	// 	let instance = <instance>{};
+	// 	instance.visible = true;
+	// 	instance.x = this.x;
+	// 	instance.y = this.y;
+	// 	instance.scale = { x: this.scale.x, y: this.scale.y };
+	// 	instance.angle = this.angle;
+	// 	instance.source = this;
+	// 	instance.localMatrix = new Float32Array(9);
+	// 	instance.worldMatrix = new Float32Array(9);
+	// 	instance.buffer = this.gl.createFramebuffer();
+	// 	instance.children = [];
 
-		this.children.forEach(child => {
-			instance.children.push(child.createInstance());
-		});
+	// 	this.children.forEach(child => {
+	// 		instance.children.push(child.createInstance());
+	// 	});
 
-		this.instances.push(instance);
+	// 	this.instances.push(instance);
 
-		return instance;
-	}
+	// 	return instance;
+	// }
 
 	get angle() {
 		return this._angle;
@@ -327,7 +328,7 @@ class Renderable extends Container {
 		y?: number,
 		w?: number,
 		h?: number,
-		pivot: Object = { x: 0, y: 0 }
+		pivot: vec2 = { x: 0, y: 0 }
 	) {
 		super(base, x, y, w, h, pivot);
 
@@ -460,55 +461,6 @@ class Sprite extends Renderable {
 			"sampler"
 		);
 	}
-}
-
-// class Symbol {
-// 	instances: Array<Object>;
-// 	children: Array<Container | Rectangle | Renderable | Sprite> = [];
-// 	width: number;
-// 	height: number;
-// 	base: Base;
-// 	gl: WebGLRenderingContext;
-
-// 	constructor(base: Base) {
-// 		this.children = [];
-// 		this.instances = [];
-// 		this.width = 0;
-// 		this.height = 0;
-// 		this.base = base;
-// 		this.gl = base.gl;
-// 	}
-
-// 	add(obj: Renderable | Rectangle | Sprite) {
-// 		this.children.push(obj);
-// 		this.calculateSize(obj);
-// 	}
-
-// 	createInstance(x: number = 0, y: number = 0) {
-// 		let framebuffer = this.gl.createFramebuffer();
-
-// 		this.instances.push({
-// 			x: x,
-// 			y: y,
-// 			draw: false,
-// 			scale: { x: 1, y: 1 },
-// 			angle: 0,
-// 			framebuffer: framebuffer,
-// 			symbolOf: this
-// 		});
-// 	}
-
-// 	calculateSize(obj: any) {
-// 		let angle = Angles.normalize(Angles.toDeg(obj.angle));
-// 		let width = obj.width * Math.sin(angle) + obj.height * Math.cos(angle);
-// 		let height = obj.width * Math.cos(angle) + obj.height * Math.sin(angle);
-// 		if (obj.x + width > this.width || obj.y + height > this.height) {
-// 		}
-// 	}
-// }
-
-class Timeline {
-	// Todo
 }
 
 class Base {
