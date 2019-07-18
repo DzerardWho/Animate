@@ -52,25 +52,25 @@ export class Container {
 		this.base.symbols.push(this);
 	}
 
-	updateWorldMatrix(parentWorldMatrix?: Float32Array) {
-		glMatrix.mat3.fromTranslation(this.localMatrix, [this.x, this.y]);
-		this.scaleAndRotate(this.width, this.height, this.angle);
-		if (parentWorldMatrix) {
-			glMatrix.mat3.multiply(
-				this.worldMatrix,
-				parentWorldMatrix,
-				this.localMatrix
-			);
-		} else {
-			glMatrix.mat3.copy(this.worldMatrix, this.localMatrix);
-		}
+	// updateWorldMatrix(parentWorldMatrix?: Float32Array) {
+	// 	glMatrix.mat3.fromTranslation(this.localMatrix, [this.x, this.y]);
+	// 	this.scaleAndRotate(this.width, this.height, this.angle);
+	// 	if (parentWorldMatrix) {
+	// 		glMatrix.mat3.multiply(
+	// 			this.worldMatrix,
+	// 			parentWorldMatrix,
+	// 			this.localMatrix
+	// 		);
+	// 	} else {
+	// 		glMatrix.mat3.copy(this.worldMatrix, this.localMatrix);
+	// 	}
 
-		let worldMatrix = this.worldMatrix;
-		this.children.forEach(child => {
-			child.updateWorldMatrix(worldMatrix);
-		});
-		// glMatrix.mat3.identity(this.localMatrix);
-	}
+	// 	let worldMatrix = this.worldMatrix;
+	// 	this.children.forEach(child => {
+	// 		child.updateWorldMatrix(worldMatrix);
+	// 	});
+	// 	// glMatrix.mat3.identity(this.localMatrix);
+	// }
 
 	setParent(parent) {
 		if (this.parent) {
@@ -86,17 +86,35 @@ export class Container {
 		this.parent = parent;
 	}
 
-	moveTo(x: number, y: number) {
-		glMatrix.mat3.translate(this.localMatrix, this.localMatrix, [x, y]);
+	updateWorldMatrix(parentWorldMatrix?: Float32Array) {
+		glMatrix.mat3.fromTranslation(this.worldMatrix, [this.x, this.y]);
+		this.scaleAndRotate();
+		if (parentWorldMatrix) {
+			glMatrix.mat3.multiply(
+				this.worldMatrix,
+				parentWorldMatrix,
+				this.worldMatrix
+			);
+		}
+
+		let worldMatrix = this.worldMatrix;
+		this.children.forEach(child => {
+			child.updateWorldMatrix(worldMatrix);
+		});
+		// glMatrix.mat3.identity(this.localMatrix);
 	}
 
-	scaleAndRotate(x: number, y: number, angle: number) {
+	moveTo(x: number, y: number) {
+		glMatrix.mat3.translate(this.worldMatrix, this.worldMatrix, [x, y]);
+	}
+
+	scaleAndRotate() {
 		this.moveTo(this.pivot["x"], this.pivot["y"]);
-		glMatrix.mat3.scale(this.localMatrix, this.localMatrix, [
+		glMatrix.mat3.scale(this.worldMatrix, this.worldMatrix, [
 			this.scale.x,
 			this.scale.y
 		]);
-		glMatrix.mat3.rotate(this.localMatrix, this.localMatrix, angle);
+		glMatrix.mat3.rotate(this.worldMatrix, this.worldMatrix, this.angle);
 		this.moveTo(-this.pivot["x"], -this.pivot["y"]);
 	}
 
