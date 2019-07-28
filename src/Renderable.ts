@@ -1,23 +1,32 @@
-import { Container } from './Container'
 import { vec2, Base } from './Base'
+import { Instance } from './_Instance';
 
-export class Renderable extends Container {
+export class Renderable {
+	transformationPoint: vec2;
+
 	attribs: Object;
 	uniforms: Object;
+	instances: Array<Instance>;
 
 	shapeBuffer: WebGLBuffer;
 	indicesBuffer: WebGLBuffer;
 	program: WebGLProgram;
+	worldMatrix: Float32Array;
+	gl: WebGLRenderingContext;
+	base: Base;
+
 
 	constructor(
 		base: Base,
-		x?: number,
-		y?: number,
 		w?: number,
 		h?: number,
-		pivot: vec2 = { x: 0, y: 0 }
+		transformationPoint: vec2 = { x: 0, y: 0 }
 	) {
-		super(base, x, y, w, h, pivot);
+		this.base = base;
+		this.gl = base.gl;
+
+		this.transformationPoint = { x: transformationPoint.x, y: transformationPoint.y };
+		this.instances = [];
 
 		this.shapeBuffer = this.gl.createBuffer();
 		this.indicesBuffer = base.defaultIndicesBuffer;
@@ -30,16 +39,16 @@ export class Renderable extends Container {
 		this.gl.bufferData(
 			this.gl.ARRAY_BUFFER,
 			new Float32Array([
-				0,
-				0,
-				0,
-				this.height,
-				this.width,
-				0,
-				this.width,
-				this.height
+				0, 0,
+				0, h,
+				w, 0,
+				w, h
 			]),
 			this.gl.STATIC_DRAW
 		);
+	}
+
+	createInstance(){
+		return new Instance(this)
 	}
 }

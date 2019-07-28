@@ -1,6 +1,7 @@
 let b, t, t2;
 let img, img2;
 let sprite, sprite1, head;
+let slider;
 let i = 1;
 function test(){
     sprite.width += 0.5;
@@ -9,6 +10,31 @@ function test(){
     i += 5;
     b.draw();
     requestAnimationFrame(test);
+}
+
+function createSymblos(){
+    return new Promise((resolve, reject) => {
+        sprite = new Sprite(b, img, 50, 30);
+        head = new Sprite(b, headimg, 0, 0);
+        sprite1 = new Sprite(b, img2, 0, 0);
+
+        t.addChild(t2);
+        sprite.addChild(head);
+        // head.scale.x = -1;
+        head.x = 0;
+        head.y = 0;
+        
+        b.scene.addChild(t);
+        b.scene.addChild(sprite);
+        b.scene.addChild(sprite1);
+        
+        t.x = 45;
+        t.y = 45;
+        head.transformationPoint.x = 76;
+        head.transformationPoint.y = 63.5;
+
+        resolve();
+    });
 }
 
 function initDemo(){
@@ -25,33 +51,33 @@ function initDemo(){
     img.onload = () => {
         img2.onload = () => {
             headimg.onload = () => {
-                sprite = new Sprite(b, img, 50, 30);
-                head = new Sprite(b, headimg, 0, 0);
-                sprite1 = new Sprite(b, img2, 0, 0);
-                t2.setParent(t);
-                t.setParent(b.scene);
-                head.setParent(sprite);
-                sprite.setParent(b.scene);
-                // sprite1.setParent(sprite);
-                sprite1.setParent(b.scene);
-                // sprite.setParent(t);
-                // t.moveTo(45, 45);
-                t.x = 45;
-                t.y = 45;
-                // sprite.pivot.x = 65;
-                // sprite.pivot.y = 135;
-                head.pivot.x = 76;
-                head.pivot.y = 63.5;
-                // sprite1.width = 50;
-                // t.angle = 45;
-                // b.scene.updateWorldMatrix();
-                b.draw();
-                // test();
-                // b.clear();
+                createSymblos().then(() => {
+                    b.createSceneInstance();
+                    // let s = new Instance(sprite);
+                    // s.x = 0;
+                    // s.y = 0;
+                    // s.scale.x = -1;
+                
+                    // b.sceneInstance.children.push(s);
+                    // b.draw();
+                    draw();
+                    slider = document.getElementById('range');
+                    slider.oninput = () => {
+                        sprite.instances[0].scale.x = Number(slider.value);
+                        // sprite.instances[0].scale.y = Number(slider.value);
+                        draw();
+                        // head.instances[0].scale.x = -Number(slider.value);
+                    }
+                });
             }
             headimg.src = 'test/smieci/John_Egbert4.png'
         }
         img2.src = 'test/smieci/captor.png';
     }
     img.src = "test/smieci/John_Egbert3.png";
+}
+
+function draw(){
+    b.draw();
+    // requestAnimationFrame(draw);
 }

@@ -9,8 +9,8 @@ export class Sprite extends Renderable {
 	texture: WebGLTexture;
 	textureCoords: WebGLBuffer;
 
-	constructor(base: Base, img: ImageData, x: number, y: number) {
-		super(base, x, y, img.width, img.height);
+	constructor(base: Base, img: ImageData) {
+		super(base, img.width, img.height);
 		this.program = base.defaultSpriteProgram;
 
 		this.texture = this.gl.createTexture();

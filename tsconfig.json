@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "target": "es2019",
+        "declaration": true,
+        "declarationDir": "./types",
+        "outDir": "./out",
+        // "outFile": "./Base.js",
+        "rootDir": "./src/",
+        "lib": ["es2015", "dom"],
+        "sourceMap": true,
+        "module": "es6"
+    },
+    "include": [
+        "./src/*"
+    ]
+}

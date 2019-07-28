@@ -1,4 +1,4 @@
-import * as glMatrix from "gl-matrix";
+// import * as glMatrix from "gl-matrix";
 import { vec2 } from './Base'
 import { Instance, instance } from './Instance'
 import { Rectangle } from './Rectangle'
@@ -13,7 +13,7 @@ export class Container {
 	gl: WebGLRenderingContext;
 	base: Base;
 	parent: Container | Rectangle | Sprite;
-	instances: Array<instance>;
+	instances: Array<Instance>;
 
 	x: number;
 	y: number;
@@ -23,7 +23,7 @@ export class Container {
 	height: number;
 	private _angle: number;
 	scale: vec2;
-	pivot: vec2;
+	transformationPoint: vec2;
 
 	constructor(
 		base: Base,
@@ -31,7 +31,7 @@ export class Container {
 		y: number,
 		w: number,
 		h: number,
-		pivot: vec2 = { x: 0, y: 0 }
+		transformationPoint: vec2 = { x: 0, y: 0 }
 	) {
 		this.localMatrix = glMatrix.mat3.identity(new Float32Array(9));
 		this.worldMatrix = glMatrix.mat3.identity(new Float32Array(9));
@@ -47,30 +47,30 @@ export class Container {
 		this.angle = 0;
 		this.scale = { x: 1, y: 1 };
 		this.instances = [];
-		this.pivot = { x: pivot["x"], y: pivot["y"] };
+		this.transformationPoint = { x: transformationPoint["x"], y: transformationPoint["y"] };
 
 		this.base.symbols.push(this);
 	}
 
-	// updateWorldMatrix(parentWorldMatrix?: Float32Array) {
-	// 	glMatrix.mat3.fromTranslation(this.localMatrix, [this.x, this.y]);
-	// 	this.scaleAndRotate(this.width, this.height, this.angle);
-	// 	if (parentWorldMatrix) {
-	// 		glMatrix.mat3.multiply(
-	// 			this.worldMatrix,
-	// 			parentWorldMatrix,
-	// 			this.localMatrix
-	// 		);
-	// 	} else {
-	// 		glMatrix.mat3.copy(this.worldMatrix, this.localMatrix);
-	// 	}
-
-	// 	let worldMatrix = this.worldMatrix;
-	// 	this.children.forEach(child => {
-	// 		child.updateWorldMatrix(worldMatrix);
-	// 	});
-	// 	// glMatrix.mat3.identity(this.localMatrix);
-	// }
+	addChild(child, createInstance: boolean = false){
+		if (!child){
+			return;
+		}
+		
+		if (child.parent){
+			let ndx = child.parent.children.indexOf(child.source);
+			if (ndx >= 0){
+				child.parent.children.splice(ndx, 1);
+			}
+		}
+		child.parent = this;
+		this.children.push(child);
+		if (createInstance){
+			this.instances.forEach(instance => {
+				instance.addChild(child);
+			});
+		}
+	}
 
 	setParent(parent) {
 		if (this.parent) {
@@ -86,22 +86,10 @@ export class Container {
 		this.parent = parent;
 	}
 
-	updateWorldMatrix(parentWorldMatrix?: Float32Array) {
-		glMatrix.mat3.fromTranslation(this.worldMatrix, [this.x, this.y]);
-		this.scaleAndRotate();
-		if (parentWorldMatrix) {
-			glMatrix.mat3.multiply(
-				this.worldMatrix,
-				parentWorldMatrix,
-				this.worldMatrix
-			);
-		}
-
-		let worldMatrix = this.worldMatrix;
-		this.children.forEach(child => {
-			child.updateWorldMatrix(worldMatrix);
+	updateWorldMatrix() {
+		this.instances.forEach(instance => {
+			instance.updateWorldMatrix();
 		});
-		// glMatrix.mat3.identity(this.localMatrix);
 	}
 
 	moveTo(x: number, y: number) {
@@ -109,36 +97,14 @@ export class Container {
 	}
 
 	scaleAndRotate() {
-		this.moveTo(this.pivot["x"], this.pivot["y"]);
+		this.moveTo(this.transformationPoint["x"], this.transformationPoint["y"]);
 		glMatrix.mat3.scale(this.worldMatrix, this.worldMatrix, [
 			this.scale.x,
 			this.scale.y
 		]);
 		glMatrix.mat3.rotate(this.worldMatrix, this.worldMatrix, this.angle);
-		this.moveTo(-this.pivot["x"], -this.pivot["y"]);
+		this.moveTo(-this.transformationPoint["x"], -this.transformationPoint["y"]);
 	}
-
-	// createInstance() {
-	// 	let instance = <instance>{};
-	// 	instance.visible = true;
-	// 	instance.x = this.x;
-	// 	instance.y = this.y;
-	// 	instance.scale = { x: this.scale.x, y: this.scale.y };
-	// 	instance.angle = this.angle;
-	// 	instance.source = this;
-	// 	instance.localMatrix = new Float32Array(9);
-	// 	instance.worldMatrix = new Float32Array(9);
-	// 	instance.buffer = this.gl.createFramebuffer();
-	// 	instance.children = [];
-
-	// 	this.children.forEach(child => {
-	// 		instance.children.push(child.createInstance());
-	// 	});
-
-	// 	this.instances.push(instance);
-
-	// 	return instance;
-	// }
 
 	get angle() {
 		return this._angle;

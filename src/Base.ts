@@ -1,16 +1,13 @@
-import * as glMatrix from "gl-matrix";
+// import * as glMatrix from "gl-matrix";
 import { dvs, dfs, dsvs, dsfs } from './Programs'
 import { Container } from './Container'
-import { Instance, instance } from './Instance'
+// import { Instance, instance } from './Instance'
+import { Instance } from './_Instance'
 import { Renderable } from './Renderable'
 import { Rectangle } from './Rectangle'
 import { Sprite } from './Sprite'
 import { Color, _Color } from './Color'
-
-
-// Zmienić punkt obrotu (pivot) na punkt transformacji (trans? transformationPoint?)
-
-// We flashu obiekty rysowane (sprite'y, kształty) nie mogą mieć dzieci (chyba)
+import { Symbol } from './Symbol'
 
 // TODO: Timeline ???
 
@@ -24,6 +21,7 @@ export class Base {
 	gl: WebGLRenderingContext;
 
 	scene: Container;
+	sceneInstance: Instance;
 	backgroundColor: Color;
 
 	defaultShapeProgram: WebGLProgram;
@@ -33,15 +31,17 @@ export class Base {
 
 	projectionMatrix: Float32Array;
 
-	objectsToDraw: Array<any | instance>;
-	symbols: Array<Container | Renderable | Rectangle | Sprite>;
+	objectsToDraw: Array<any | Instance>;
+	symbols: Array<Container | Renderable | Rectangle | Sprite | Symbol>;
+	renderQueue: Array<Instance>;
 
 	constructor(
 		width: number,
 		height: number,
 		canvas_id: string,
 		bgC: _Color | Color = [-1, -1, -1, -1],
-		webgl2: boolean = false
+		webgl2: boolean = false,
+		fps: number = 25
 	) {
 		this.canvas = <HTMLCanvasElement>document.getElementById(canvas_id);
 		if (this.canvas.nodeName != "CANVAS") {
@@ -71,29 +71,30 @@ export class Base {
 
 		this.gl.enable(this.gl.CULL_FACE);
 		this.gl.enable(this.gl.BLEND);
-		this.gl.frontFace(this.gl.CCW);
 		this.gl.cullFace(this.gl.BACK);
 		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
-		this.scene = new Container(this, 0, 0, 1, 1);
 		this.objectsToDraw = [];
 		this.symbols = [];
+		this.renderQueue = [];
+		this.scene = new Container(this, 0, 0, 1, 1);
+		// this.sceneInstance = new Instance(this.scene);
 
-		this.defaultIndicesBuffer = this.gl.createBuffer();
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.defaultIndicesBuffer);
+		// this.defaultIndicesBuffer = this.gl.createBuffer();
+		// this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.defaultIndicesBuffer);
 
-		this.gl.bufferData(
-			this.gl.ELEMENT_ARRAY_BUFFER,
-			new Uint16Array([0, 1, 2, 2, 1, 3]),
-			this.gl.STATIC_DRAW
-		);
+		// this.gl.bufferData(
+		// 	this.gl.ELEMENT_ARRAY_BUFFER,
+		// 	new Uint16Array([0, 1, 2, 2, 1, 3]),
+		// 	this.gl.STATIC_DRAW
+		// );
 
 		this.defaultShapeProgram = this.newProgram();
 		this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
 		// this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, this.indices, this.gl.STATIC_DRAW);
 	}
 
-	draw() {
+	oldDraw() {
 		this.clear();
 		this.scene.updateWorldMatrix();
 		let lastProgram = null;
@@ -143,54 +144,75 @@ export class Base {
 		}
 	}
 
-	newDraw() {
+	draw() {
 		this.clear();
-		this.scene.updateWorldMatrix();
+		// this.scene.updateWorldMatrix();
+		this.sceneInstance.updateWorldMatrix();
 		let lastProgram = null;
-		let child;
-		for (let i = 0; i < this.objectsToDraw.length; ++i) {
-			child = this.objectsToDraw[i];
-			if (child.program !== lastProgram) {
-				lastProgram = child.program;
+
+		for (let item of this.renderQueue){
+			// if (!item.isChild){
+			// 	item.updateWorldMatrix();
+			// }
+			if (!item.visible || !item.source.program){
+				continue;
+			}
+			if (lastProgram !== item.source.program){
+				lastProgram = item.source.program;
 				this.gl.useProgram(lastProgram);
 			}
-
-			if (child.color) {
-				this.gl.uniform4fv(child.uniforms.uColor, child.color.buffer);
-			} else if (child.texture) {
-				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, child.textureCoords);
+			
+			if (item.source.color){
+				this.gl.uniform4fv(item.source.uniforms.uColor, item.source.color.buffer);
+			}else if (item.source.texture){
+				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, item.source.textureCoords);
 				this.gl.vertexAttribPointer(
-					child.attribs.textureCoords,
+					item.source.attribs.textureCoords,
 					2,
 					this.gl.FLOAT,
 					false,
 					2 * Float32Array.BYTES_PER_ELEMENT,
 					0
 				);
-				this.gl.enableVertexAttribArray(child.attribs.textureCoords);
-
+				this.gl.enableVertexAttribArray(item.source.attribs.textureCoords);
 				this.gl.activeTexture(this.gl.TEXTURE0);
-				this.gl.bindTexture(this.gl.TEXTURE_2D, child.texture);
-				this.gl.uniform1i(child.uniforms.sampler, 0);
+				this.gl.bindTexture(this.gl.TEXTURE_2D, item.source.texture);
+				this.gl.uniform1i(item.source.uniforms.sampler, 0);
 			}
-			this.gl.bindBuffer(child.gl.ARRAY_BUFFER, child.shapeBuffer);
+			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, item.source.shapeBuffer);
 			this.gl.vertexAttribPointer(
-				child.attribs.position,
+				item.source.attribs.position,
 				2,
 				this.gl.FLOAT,
 				false,
 				2 * Float32Array.BYTES_PER_ELEMENT,
 				0
 			);
-			this.gl.enableVertexAttribArray(child.attribs.position);
+			this.gl.enableVertexAttribArray(item.source.attribs.position);
 			this.gl.uniformMatrix3fv(
-				child.uniforms.mProj,
+				item.source.uniforms.mProj,
 				false,
 				this.projectionMatrix
 			);
-			this.gl.uniformMatrix3fv(child.uniforms.mWorld, false, child.worldMatrix);
-			this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
+			this.gl.uniformMatrix3fv(
+				item.source.uniforms.mWorld,
+				false,
+				item.worldMatrix
+			);
+			this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+			// this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_SHORT, 0);
 		}
+	}
+
+	createSceneInstance(){
+		this.sceneInstance = new Instance(this.scene);
+	}
+
+	finishInit(){
+		this.sceneInstance = new Instance(this.scene);
+		this.scene.children.forEach(child => {
+			// child.init();
+		});
 	}
 
 	setCanvasSize(width, height) {
@@ -222,28 +244,6 @@ export class Base {
 		return s;
 	}
 
-	static compileShader(gl, src: string, type: string) {
-		let t: number;
-		if (type == "vs") {
-			t = gl.VERTEX_SHADER;
-		} else if (type == "fs") {
-			t = gl.FRAGMENT_SHADER;
-		} else {
-			throw new Error("Podano nie prawidłowy typ shader'a");
-		}
-
-		let s: WebGLShader = gl.createShader(t);
-
-		gl.shaderSource(s, src);
-		gl.compileShader(s);
-
-		if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-			throw new Error(gl.getShaderInfoLog(s));
-		}
-
-		return s;
-	}
-
 	compileProgram(vs: WebGLShader, fs: WebGLShader) {
 		let p: WebGLProgram = this.gl.createProgram();
 		this.gl.attachShader(p, vs);
@@ -257,31 +257,9 @@ export class Base {
 		return p;
 	}
 
-	static compileProgram(gl, vs: WebGLShader, fs: WebGLShader) {
-		let p: WebGLProgram = gl.createProgram();
-		gl.attachShader(p, vs);
-		gl.attachShader(p, fs);
-		gl.linkProgram(p);
-
-		if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
-			throw new Error(gl.getProgramInfoLog(p));
-		}
-
-		return p;
-	}
-
 	newVertexShader(src: string) {
 		try {
 			return this.compileShader(src, "vs");
-		} catch (e) {
-			console.error(e);
-			return -1;
-		}
-	}
-
-	static newVertexShader(gl, src: string) {
-		try {
-			return Base.compileShader(gl, src, "vs");
 		} catch (e) {
 			console.error(e);
 			return -1;
@@ -297,33 +275,11 @@ export class Base {
 		}
 	}
 
-	static newFragmentShader(gl, src: string) {
-		try {
-			return Base.compileShader(gl, src, "fs");
-		} catch (e) {
-			console.error(e);
-			return -1;
-		}
-	}
-
 	newProgram(vs: string = dvs, fs: string = dfs) {
 		try {
 			return this.compileProgram(
 				this.newVertexShader(vs),
 				this.newFragmentShader(fs)
-			);
-		} catch (e) {
-			console.error(e);
-			return -1;
-		}
-	}
-
-	static newProgram(gl, vs = dvs, fs = dfs) {
-		try {
-			return Base.compileProgram(
-				gl,
-				Base.newVertexShader(gl, vs),
-				Base.newFragmentShader(gl, fs)
 			);
 		} catch (e) {
 			console.error(e);

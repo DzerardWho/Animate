@@ -7,13 +7,11 @@ export class Rectangle extends Renderable {
 
 	constructor(
 		base: Base,
-		x: number,
-		y: number,
 		w: number,
 		h: number,
 		c: _Color = [1, 1, 1, 1]
 	) {
-		super(base, x, y, w, h);
+		super(base, w, h);
 		this.program = base.defaultShapeProgram;
 
 		this.color = new Color(c);
