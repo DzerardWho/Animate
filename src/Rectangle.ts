@@ -18,11 +18,11 @@ export class Rectangle extends Renderable {
 		this.program = base.defaultShapeProgram;
 
 		this.color = new Color(c);
-		this.attribs["aPosition"] = this.gl.getAttribLocation(
+		this.attribs["position"] = this.gl.getAttribLocation(
 			this.program,
 			"aPosition"
 		);
-		this.gl.enableVertexAttribArray(this.attribs["aPosition"]);
+		this.gl.enableVertexAttribArray(this.attribs["position"]);
 		this.uniforms["uColor"] = this.gl.getUniformLocation(
 			this.program,
 			"uColor"
@@ -31,16 +31,14 @@ export class Rectangle extends Renderable {
 			this.program,
 			"transMatrix"
 		);
-		this.uniforms["mProj"] = this.gl.getUniformLocation(this.program, "mProj");
 	}
 
-	async draw(matrix: Matrix, frame: number){
+	 draw(matrix: Matrix, frame: number){
 		if (this.base.lastUsedProgram !== this.program){
 			this.base.lastUsedProgram = this.program;
 			this.gl.useProgram(this.program);
 		}
 
-		this.gl.uniform4fv(this.attribs['uColor'], this.color.buffer);
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
 		this.gl.vertexAttribPointer(
 			this.attribs['position'],
@@ -50,8 +48,9 @@ export class Rectangle extends Renderable {
 			2 * Float32Array.BYTES_PER_ELEMENT,
 			0
 		);
-		this.gl.enableVertexAttribArray(this.attribs['position']);
-		this.gl.uniformMatrix3fv(this.attribs['transMatrix'], false, matrix);
+		this.gl.uniform4fv(this.uniforms['uColor'], this.color.buffer);
+		this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
 		this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+		// this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
 	}
 }

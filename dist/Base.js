@@ -25,30 +25,6 @@ function projectionMatrix(out, width, height) {
     return out;
 }
 
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation. All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
-
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-MERCHANTABLITY OR NON-INFRINGEMENT.
-
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
-***************************************************************************** */
-
-function __awaiter(thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-}
-
 function Linear(a) {
     return a;
 }
@@ -80,92 +56,30 @@ class Data {
         }
         this.alpha = 1;
     }
-    // get x(){
-    //     return this._x;
-    // }
-    // set x(value: number){
-    //     if (this._x === value){
-    //         return;
-    //     }
-    //     this._x = value;
-    //     this.dirty = true;
-    // }
-    // get y(){
-    //     return this._y;
-    // }
-    // set y(value: number){
-    //     if (this._y === value){
-    //         return;
-    //     }
-    //     this._y = value;
-    //     this.dirty = true;
-    // }
-    // get angle(){
-    //     return this._angle;
-    // }
-    // set angle(value: number){
-    //     if (this._angle === value){
-    //         return;
-    //     }
-    //     this._angle = value;
-    //     this.dirty = true;
-    // }
-    // get scale(){
-    //     return this._scale;
-    // }
-    // set scale(value: vec2){
-    //     if (this._scale === value){
-    //         return;
-    //     }
-    //     this._scale = value;
-    //     this.dirty = true;
-    // }
-    // get transformationPoint(){
-    //     return this._transformationPoint;
-    // }
-    // set transformationPoint(value: vec2){
-    //     if (this._transformationPoint === value){
-    //         return;
-    //     }
-    //     this._transformationPoint = value;
-    //     this.dirty = true;
-    // }
-    // get alpha(){
-    //     return this._alpha;
-    // }
-    // set alpha(value: number){
-    //     if (this._alpha === value){
-    //         return;
-    //     }
-    //     this._alpha = value;
-    //     this.dirty = true;
-    // }
     getData(to, progress) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let alpha = this.alpha + (to.alpha - this.alpha) * progress;
-            if (alpha < 0) {
-                alpha = 0;
-            }
-            else if (alpha > 1) {
-                alpha = 1;
-            }
-            return {
-                pos: {
-                    x: this.pos.x + (to.pos.x - this.pos.x) * progress,
-                    y: this.pos.y + (to.pos.y - this.pos.y) * progress
-                },
-                angle: this.angle + (to.angle - this.angle) * progress,
-                scale: {
-                    x: this.scale.x + (to.scale.x - this.scale.x) * progress,
-                    y: this.scale.y + (to.scale.y - this.scale.y) * progress,
-                },
-                transformationPoint: {
-                    x: this.transformationPoint.x + (to.transformationPoint.x - this.transformationPoint.x) * progress,
-                    y: this.transformationPoint.y + (to.transformationPoint.y - this.transformationPoint.y) * progress,
-                },
-                alpha: alpha
-            };
-        });
+        let alpha = this.alpha + (to.alpha - this.alpha) * progress;
+        if (alpha < 0) {
+            alpha = 0;
+        }
+        else if (alpha > 1) {
+            alpha = 1;
+        }
+        return {
+            pos: {
+                x: this.pos.x + (to.pos.x - this.pos.x) * progress,
+                y: this.pos.y + (to.pos.y - this.pos.y) * progress
+            },
+            angle: this.angle + (to.angle - this.angle) * progress,
+            scale: {
+                x: this.scale.x + (to.scale.x - this.scale.x) * progress,
+                y: this.scale.y + (to.scale.y - this.scale.y) * progress,
+            },
+            transformationPoint: {
+                x: this.transformationPoint.x + (to.transformationPoint.x - this.transformationPoint.x) * progress,
+                y: this.transformationPoint.y + (to.transformationPoint.y - this.transformationPoint.y) * progress,
+            },
+            alpha: alpha
+        };
     }
 }
 class Element {
@@ -173,28 +87,26 @@ class Element {
         this.motion = to ? true : false;
         this.easing = this.motion ? Linear : null;
         this.to = this.motion ? new Data(to) : null;
-        // this.val = this.motion ? new Data(null) : null;
         this.from = new Data(from);
         this.object = obj;
+        this.transMatrix = new Float32Array(9);
         this.continueFrom = continueFromFrame || 0;
     }
     draw(parentMatrix, frame, duration) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let progress;
-            frame += this.continueFrom;
-            if (frame > duration) {
-                if (this.object.loop) {
-                    frame %= duration;
-                }
-                else {
-                    return;
-                }
+        let progress;
+        frame += this.continueFrom;
+        if (frame > duration) {
+            if (this.object.loop) {
+                frame %= duration;
             }
-            progress = frame / duration;
-            let data = this.motion ? yield this.from.getData(this.to, this.easing(progress)) : this.from;
-            computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle);
-            this.object.draw(this.transMatrix, frame);
-        });
+            else {
+                return;
+            }
+        }
+        progress = frame / duration;
+        let data = this.motion ? this.from.getData(this.to, this.easing(progress)) : this.from;
+        computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle);
+        this.object.draw(this.transMatrix, frame);
     }
 }
 class Timeframe {
@@ -226,63 +138,50 @@ class TimeframeLayer {
         this.frames = [];
     }
     addElement(obj, from, to = null, start, duration, continueFrom = 0) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let _dur = start + duration;
-            if (_dur > this.duration && start <= this.duration) {
-                _dur -= this.duration;
-                this.duration += _dur;
-            }
-            // let elem = new Element(obj, from, to, continueFrom);
-            // await this.solveCollisions(await this.collision(start, duration), start, duration);
-            // let timeframe = await this.find(start, start + duration);
-            let timeFrame = yield this.find(start, duration);
-            if (timeFrame) {
-                timeFrame.addElement(new Element(obj, from, to, continueFrom));
+        let _dur = start + duration;
+        if (_dur > this.duration && start <= this.duration) {
+            _dur -= this.duration;
+            this.duration += _dur;
+        }
+        let timeFrame = this.find(start, duration);
+        if (timeFrame) {
+            timeFrame.addElement(new Element(obj, from, to, continueFrom));
+        }
+        else {
+            let t = new Timeframe(start, duration);
+            t.addElement(new Element(obj, from, to, continueFrom));
+            let index = this.findIndex(start, duration);
+            if (index === -1) {
+                this.frames.push(t);
             }
             else {
-                let t = new Timeframe(start, duration);
-                t.addElement(new Element(obj, from, to, continueFrom));
-                let index = yield this.findIndex(start, duration);
-                if (index === -1) {
-                    this.frames.push(t);
-                }
-                else {
-                    this.frames.splice(index + 1, 0, t);
-                }
+                this.frames.splice(index + 1, 0, t);
             }
-            return _dur;
-        });
+        }
+        return _dur;
     }
-    // async solveCollisions(collisions: Array<Timeframe>, start: number, duration: number){
-    // }
     collision(start, duration) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.frames.filter((val) => {
-                if (start === val.start && duration === val.duration) {
-                    return false;
-                }
-                if (start >= val.start && val.start <= start + duration) {
-                    return true;
-                }
-                if (val.start >= start && start <= val.start + val.duration) {
-                    return true;
-                }
+        return this.frames.filter((val) => {
+            if (start === val.start && duration === val.duration) {
                 return false;
-            });
+            }
+            if (start >= val.start && val.start <= start + duration) {
+                return true;
+            }
+            if (val.start >= start && start <= val.start + val.duration) {
+                return true;
+            }
+            return false;
         });
     }
     findByFrame(frame) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.frames.find((val) => {
-                return (val.start >= frame && frame <= val.start + val.duration);
-            });
+        return this.frames.find((val) => {
+            return (val.start >= frame && frame <= val.start + val.duration);
         });
     }
     find(start, duration) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.frames.find((val) => {
-                return (val.start === start && val.duration === duration);
-            });
+        return this.frames.find((val) => {
+            return (val.start === start && val.duration === duration);
         });
     }
     findIndex(start, duration) {
@@ -306,27 +205,23 @@ class Timeline {
         }
     }
     addToLayer(obj, from, to, start, duration, layer, continueFrom = 0) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (layer > this.layers.length - 1) {
-                throw "Layer out of range";
-            }
-            this.duration += yield this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);
-            return this;
-        });
+        if (layer > this.layers.length - 1) {
+            throw "Layer out of range";
+        }
+        this.duration += this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);
+        return this;
     }
     draw(matrix, frame) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let timeFrame, _frame;
-            this.layers.forEach((layer) => __awaiter(this, void 0, void 0, function* () {
-                timeFrame = yield layer.findByFrame(frame);
-                if (!timeFrame) {
-                    return;
-                }
-                _frame = frame - timeFrame.start;
-                timeFrame.elements.forEach((element) => __awaiter(this, void 0, void 0, function* () {
-                    yield element.draw(matrix, _frame);
-                }));
-            }));
+        let timeFrame, _frame;
+        this.layers.forEach((layer) => {
+            timeFrame = layer.findByFrame(frame);
+            if (!timeFrame) {
+                return;
+            }
+            _frame = frame - timeFrame.start;
+            timeFrame.elements.forEach((element) => {
+                element.draw(matrix, _frame, timeFrame.duration);
+            });
         });
     }
 }
@@ -452,25 +347,21 @@ class Rectangle extends Renderable {
         this.loop = true;
         this.program = base.defaultShapeProgram;
         this.color = new Color(c);
-        this.attribs["aPosition"] = this.gl.getAttribLocation(this.program, "aPosition");
-        this.gl.enableVertexAttribArray(this.attribs["aPosition"]);
+        this.attribs["position"] = this.gl.getAttribLocation(this.program, "aPosition");
+        this.gl.enableVertexAttribArray(this.attribs["position"]);
         this.uniforms["uColor"] = this.gl.getUniformLocation(this.program, "uColor");
         this.uniforms["transMatrix"] = this.gl.getUniformLocation(this.program, "transMatrix");
-        this.uniforms["mProj"] = this.gl.getUniformLocation(this.program, "mProj");
     }
     draw(matrix, frame) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this.base.lastUsedProgram !== this.program) {
-                this.base.lastUsedProgram = this.program;
-                this.gl.useProgram(this.program);
-            }
-            this.gl.uniform4fv(this.attribs['uColor'], this.color.buffer);
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
-            this.gl.vertexAttribPointer(this.attribs['position'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-            this.gl.enableVertexAttribArray(this.attribs['position']);
-            this.gl.uniformMatrix3fv(this.attribs['transMatrix'], false, matrix);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
-        });
+        if (this.base.lastUsedProgram !== this.program) {
+            this.base.lastUsedProgram = this.program;
+            this.gl.useProgram(this.program);
+        }
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
+        this.gl.vertexAttribPointer(this.attribs['position'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+        this.gl.uniform4fv(this.uniforms['uColor'], this.color.buffer);
+        this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
+        this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
     }
 }
 
@@ -497,25 +388,45 @@ class Sprite extends Renderable {
         this.uniforms["sampler"] = this.gl.getUniformLocation(this.program, "sampler");
     }
     draw(matrix) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this.base.lastUsedProgram !== this.program) {
-                this.base.lastUsedProgram = this.program;
-                this.gl.useProgram(this.program);
-            }
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
-            this.gl.vertexAttribPointer(this.attribs["textureCoords"], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-            this.gl.enableVertexAttribArray(this.attribs["textureCoords"]);
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
-            this.gl.vertexAttribPointer(this.attribs['position'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-            this.gl.enableVertexAttribArray(this.attribs['position']);
-            this.gl.uniformMatrix3fv(this.attribs['transMatrix'], false, matrix);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
-        });
+        if (this.base.lastUsedProgram !== this.program) {
+            this.base.lastUsedProgram = this.program;
+            this.gl.useProgram(this.program);
+        }
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
+        this.gl.vertexAttribPointer(this.attribs["textureCoords"], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+        this.gl.enableVertexAttribArray(this.attribs["textureCoords"]);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
+        this.gl.vertexAttribPointer(this.attribs['position'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+        this.gl.uniform1i(this.uniforms['sampler'], 0);
+        this.gl.enableVertexAttribArray(this.attribs['position']);
+        this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
+        this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
     }
 }
 
+function logGLCall(functionName, args) {
+    console.log("gl." + functionName + "(" +
+        WebGLDebugUtils.glFunctionArgsToString(functionName, args) + ")");
+}
+function validateNoneOfTheArgsAreUndefined(functionName, args) {
+    for (var ii = 0; ii < args.length; ++ii) {
+        if (args[ii] === undefined) {
+            console.error("undefined passed to gl." + functionName + "(" +
+                WebGLDebugUtils.glFunctionArgsToString(functionName, args) + ")");
+        }
+    }
+}
+function logAndValidate(functionName, args) {
+    logGLCall(functionName, args);
+    validateNoneOfTheArgsAreUndefined(functionName, args);
+}
+function throwOnGLError(err, funcName, args) {
+    throw WebGLDebugUtils.glEnumToString(err) + " was caused by call to: " + funcName;
+}
 class Base {
-    constructor(width, height, canvas_id, bgC = [-1, -1, -1, -1], webgl2 = false, fps = 25) {
+    constructor(width, height, canvas_id, debug = false, bgC = [-1, -1, -1, -1], webgl2 = false, fps = 25) {
         this.canvas = document.getElementById(canvas_id);
         if (this.canvas.nodeName != "CANVAS") {
             this.canvas = document.createElement("canvas");
@@ -526,10 +437,14 @@ class Base {
             console.error(`Brak wsparcia dla ${webgl2 ? "webgl2" : "webgl"}.`);
             return;
         }
+        if (debug) {
+            this.gl = WebGLDebugUtils.makeDebugContext(this.gl, throwOnGLError, logAndValidate);
+        }
         this.projectionMatrix = new Float32Array(9);
         this.setCanvasSize(width, height);
         this.lastUsedProgram = null;
         this.mainScene = null;
+        this.frame = 0;
         if (bgC instanceof Color) {
             this.backgroundColor = bgC;
         }
@@ -537,9 +452,8 @@ class Base {
             this.backgroundColor = new Color(bgC);
         }
         this.clear();
-        this.gl.enable(this.gl.CULL_FACE);
+        this.gl.frontFace(this.gl.CW);
         this.gl.enable(this.gl.BLEND);
-        this.gl.cullFace(this.gl.BACK);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.defaultShapeProgram = this.newProgram();
         this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
@@ -548,7 +462,8 @@ class Base {
         if (typeof this.mainScene == undefined) {
             return;
         }
-        this.mainScene.draw(this.projectionMatrix, 0);
+        this.clear();
+        this.mainScene.draw(this.projectionMatrix, this.frame);
     }
     setCanvasSize(width, height) {
         this.canvas.width = width;
@@ -618,4 +533,5 @@ class Base {
     }
 }
 
+// export { Base, Color, Data, Element, Rectangle, Renderable, Sprite, Timeframe, TimeframeLayer, Timeline, computeMatrix, dfs, dsfs, dsvs, dvs, projectionMatrix };
 //# sourceMappingURL=Base.js.map

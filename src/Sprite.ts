@@ -78,7 +78,7 @@ export class Sprite extends Renderable {
 		);
 	}
 
-	async draw(matrix: Matrix){
+	 draw(matrix: Matrix){
 		if (this.base.lastUsedProgram !== this.program){
 			this.base.lastUsedProgram = this.program;
 			this.gl.useProgram(this.program);
@@ -103,8 +103,11 @@ export class Sprite extends Renderable {
 			2 * Float32Array.BYTES_PER_ELEMENT,
 			0
 		);
+		this.gl.activeTexture(this.gl.TEXTURE0);
+		this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+		this.gl.uniform1i(this.uniforms['sampler'], 0);
 		this.gl.enableVertexAttribArray(this.attribs['position']);
-		this.gl.uniformMatrix3fv(this.attribs['transMatrix'], false, matrix);
+		this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
 		this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
 	}
 }

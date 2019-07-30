@@ -122,7 +122,7 @@ export class Data {
     //     this.dirty = true;
     // }
 
-    async getData(to: Data, progress: number) {
+     getData(to: Data, progress: number) {
         let alpha = this.alpha + (to.alpha - this.alpha) * progress;
         if (alpha < 0){
             alpha = 0;
@@ -165,11 +165,13 @@ export class Element {
         // this.val = this.motion ? new Data(null) : null;
         this.from = new Data(from);
         this.object = obj;
+        
+        this.transMatrix = new Float32Array(9);
 
         this.continueFrom = continueFromFrame || 0;
     }
     
-    async draw(parentMatrix: Matrix, frame: number, duration: number){
+     draw(parentMatrix: Matrix, frame: number, duration: number){
         let progress;
         frame += this.continueFrom;
         if (frame > duration){
@@ -180,7 +182,7 @@ export class Element {
             }
         }
         progress = frame / duration;
-        let data = this.motion ? await this.from.getData(this.to, this.easing(progress)) : this.from;
+        let data = this.motion ?  this.from.getData(this.to, this.easing(progress)) : this.from;
         computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle);
         this.object.draw(this.transMatrix, frame);
     }
@@ -227,7 +229,7 @@ export class TimeframeLayer {
         this.frames = [];
     }
 
-    async addElement(obj: timeElement, from: _Data, to: _Data = null, start: number, duration: number, continueFrom: number = 0){
+     addElement(obj: timeElement, from: _Data, to: _Data = null, start: number, duration: number, continueFrom: number = 0){
         let _dur = start + duration;
         if (_dur > this.duration && start <= this.duration){
             _dur -= this.duration;
@@ -235,15 +237,15 @@ export class TimeframeLayer {
         }
 
         // let elem = new Element(obj, from, to, continueFrom);
-        // await this.solveCollisions(await this.collision(start, duration), start, duration);
-        // let timeframe = await this.find(start, start + duration);
-        let timeFrame = await this.find(start, duration);
+        //  this.solveCollisions( this.collision(start, duration), start, duration);
+        // let timeframe =  this.find(start, start + duration);
+        let timeFrame =  this.find(start, duration);
         if (timeFrame){
             timeFrame.addElement(new Element(obj, from, to, continueFrom))
         } else {
             let t = new Timeframe(start, duration);
             t.addElement(new Element(obj, from, to, continueFrom));
-            let index = await this.findIndex(start, duration);
+            let index =  this.findIndex(start, duration);
             if (index === -1){
                 this.frames.push(t);
             }else{
@@ -254,11 +256,11 @@ export class TimeframeLayer {
         return _dur;
     }
 
-    // async solveCollisions(collisions: Array<Timeframe>, start: number, duration: number){
+    //  solveCollisions(collisions: Array<Timeframe>, start: number, duration: number){
 
     // }
 
-    async collision(start: number, duration: number){
+     collision(start: number, duration: number){
         return this.frames.filter((val) => {
             if (start === val.start && duration === val.duration){
                 return false;
@@ -273,13 +275,13 @@ export class TimeframeLayer {
         });
     }
 
-    async findByFrame(frame: number) {
+     findByFrame(frame: number) {
         return this.frames.find((val) => {
             return (val.start >= frame && frame <= val.start + val.duration);
         });
     }
 
-    async find(start: number, duration: number) {
+     find(start: number, duration: number) {
         return this.frames.find((val) => {
             return (val.start === start && val.duration === duration)
         });
@@ -313,25 +315,25 @@ export class Timeline {
         }
     }
 
-    async addToLayer(obj: timeElement, from: _Data, to: _Data, start: number, duration: number, layer: number, continueFrom: number = 0){
+     addToLayer(obj: timeElement, from: _Data, to: _Data, start: number, duration: number, layer: number, continueFrom: number = 0){
         if (layer > this.layers.length - 1){
             throw "Layer out of range";
         }
 
-        this.duration += await this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);
+        this.duration +=  this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);
         return this;
     }
 
-    async draw(matrix: Matrix, frame: number){
-        let timeFrame, _frame;
-        this.layers.forEach(async (layer) => {
-            timeFrame = await layer.findByFrame(frame);
+     draw(matrix: Matrix, frame: number){
+        let timeFrame: Timeframe | null, _frame;
+        this.layers.forEach( (layer) => {
+            timeFrame = layer.findByFrame(frame);
             if (!timeFrame){
                 return;
             }
             _frame = frame - timeFrame.start;
-            timeFrame.elements.forEach(async (element) => {
-                await element.draw(matrix, _frame);
+            timeFrame.elements.forEach((element) => {
+                 element.draw(matrix, _frame, timeFrame.duration);
             });
         });
     }
