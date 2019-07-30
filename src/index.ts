@@ -1,6 +1,6 @@
+export { computeMatrix, projectionMatrix } from './Matrix'
+export { Timeline, Data, Element, Timeframe, TimeframeLayer } from './Timeline'
 export { dvs, dfs, dsvs, dsfs } from './Programs'
-export { Container } from './Container'
-export { Instance } from './Instance'
 export { Renderable } from './Renderable'
 export { Rectangle } from './Rectangle'
 export { Sprite } from './Sprite'

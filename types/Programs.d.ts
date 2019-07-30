@@ -1,4 +1,4 @@
-export declare const dvs = "precision mediump float;\n\nattribute vec2 aPosition;\n\nuniform mat3 mWorld;\nuniform mat3 mProj;\n\nvoid main(){\n    gl_Position = vec4((mProj * mWorld * vec3(aPosition, 1.0)).xy, 0.0, 1.0);\n}";
+export declare const dvs = "precision mediump float;\n\nattribute vec2 aPosition;\n\nuniform mat3 transMatrix;\n\nvoid main(){\n    gl_Position = vec4(transMatrix * vec3(aPosition, 1.0)).xy, 0.0, 1.0);\n}";
 export declare const dfs = "precision mediump float;\n\nuniform vec4 uColor;\n\nvoid main(){\n    gl_FragColor = uColor;\n}";
-export declare const dsvs = "precision mediump float;\n\nattribute vec2 aPosition;\nattribute vec2 aTextureCoords;\n\nuniform mat3 mWorld;\nuniform mat3 mProj;\n\nvarying vec2 f_texCoord;\n\nvoid main(){\n\tf_texCoord = aTextureCoords;\n    gl_Position = vec4((mProj * mWorld * vec3(aPosition, 1.0)).xy, 0.0, 1.0);\n}";
+export declare const dsvs = "precision mediump float;\n\nattribute vec2 aPosition;\nattribute vec2 aTextureCoords;\n\nuniform mat3 transMatrix;\n\nvarying vec2 f_texCoord;\n\nvoid main(){\n\tf_texCoord = aTextureCoords;\n    gl_Position = vec4((transMatrix * vec3(aPosition, 1.0)).xy, 0.0, 1.0);\n}";
 export declare const dsfs = "precision mediump float;\n\nvarying vec2 f_texCoord;\nuniform sampler2D sampler;\n\nvoid main(){\n\tgl_FragColor = texture2D(sampler, f_texCoord);\n}";

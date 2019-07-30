@@ -1,20 +1,21 @@
 import { vec2 } from './Base'
-import { Symbol } from './Symbol'
 import { Linear } from './EasingFunctions'
+import { computeMatrix, Matrix } from './Matrix'
+import { Rectangle } from './Rectangle';
+import { Sprite } from './Sprite';
+
+type timeElement = Timeline | Sprite | Rectangle;
 
 interface _Data{
-    x?: number;
-    y?: number;
+    pos?: vec2;
     angle?: number;
     scale?: vec2;
     transformationPoint?: vec2;
     alpha?: number;
-    // data?: any; // ????????
 }
 
-class Data {
-    x: number;
-    y: number;
+export class Data {
+    pos: vec2;
     angle: number;
     scale: vec2;
     transformationPoint: vec2;
@@ -25,8 +26,8 @@ class Data {
         if (!data){
             return this;
         }
-        this.x = data.x;
-        this.y = data.y;
+        this.pos = {x: data.pos.x, y: data.pos.y};
+
         this.angle = data.angle;
         this.scale = {x: 1, y: 1};
         this.transformationPoint = {x: 0, y: 0};
@@ -54,7 +55,7 @@ class Data {
     // }
 
     // set x(value: number){
-    //     if (this._x == value){
+    //     if (this._x === value){
     //         return;
     //     }
     //     this._x = value;
@@ -66,7 +67,7 @@ class Data {
     // }
 
     // set y(value: number){
-    //     if (this._y == value){
+    //     if (this._y === value){
     //         return;
     //     }
     //     this._y = value;
@@ -78,7 +79,7 @@ class Data {
     // }
 
     // set angle(value: number){
-    //     if (this._angle == value){
+    //     if (this._angle === value){
     //         return;
     //     }
     //     this._angle = value;
@@ -90,7 +91,7 @@ class Data {
     // }
 
     // set scale(value: vec2){
-    //     if (this._scale == value){
+    //     if (this._scale === value){
     //         return;
     //     }
     //     this._scale = value;
@@ -102,7 +103,7 @@ class Data {
     // }
     
     // set transformationPoint(value: vec2){
-    //     if (this._transformationPoint == value){
+    //     if (this._transformationPoint === value){
     //         return;
     //     }
     //     this._transformationPoint = value;
@@ -114,14 +115,14 @@ class Data {
     // }
     
     // set alpha(value: number){
-    //     if (this._alpha == value){
+    //     if (this._alpha === value){
     //         return;
     //     }
     //     this._alpha = value;
     //     this.dirty = true;
     // }
 
-    getData(to: Data, progress: number): _Data{
+    async getData(to: Data, progress: number) {
         let alpha = this.alpha + (to.alpha - this.alpha) * progress;
         if (alpha < 0){
             alpha = 0;
@@ -129,8 +130,10 @@ class Data {
             alpha = 1
         }
         return {
-            x: this.x + (to.x - this.x) * progress,
-            y: this.y + (to.y - this.y) * progress,
+            pos: {
+                x: this.pos.x + (to.pos.x - this.pos.x) * progress,
+                y: this.pos.y + (to.pos.y - this.pos.y) * progress
+            },
             angle: this.angle + (to.angle - this.angle) * progress,
             scale: {
                 x: this.scale.x + (to.scale.x - this.scale.x) * progress,
@@ -145,74 +148,57 @@ class Data {
     }
 }
 
-class Element {
-    object: any;
+export class Element {
+    object: timeElement;
     motion: boolean;
+    continueFrom: number;
     from: Data;
     to: Data | null;
     val: Data | null;
-    easing;
+    transMatrix: Float32Array;
+    easing: ((arg0: number) => number);
 
-    constructor(obj: any, from: _Data, to?: _Data, continueFromFrame?: number){
+    constructor(obj: timeElement, from: _Data, to?: _Data | null, continueFromFrame: number = 0){
         this.motion = to ? true : false;
         this.easing = this.motion ? Linear : null;
         this.to = this.motion ? new Data(to) : null;
-        this.val = this.motion ? new Data(null) : null;
+        // this.val = this.motion ? new Data(null) : null;
         this.from = new Data(from);
         this.object = obj;
 
-        if (continueFromFrame && this.object instanceof TimelineInstance){
-            this.object.frame = continueFromFrame;
+        this.continueFrom = continueFromFrame || 0;
+    }
+    
+    async draw(parentMatrix: Matrix, frame: number, duration: number){
+        let progress;
+        frame += this.continueFrom;
+        if (frame > duration){
+            if (this.object.loop){
+                frame %= duration;
+            } else {
+                return;
+            }
         }
-    }
-
-    getData(progress: number){
-        return {
-            object: this.object,
-            data: this.motion ? this.val.getData(this.from, this.to, this.easing(progress)) : this.from
-        };
-    }
-
-    async draw(){
-
+        progress = frame / duration;
+        let data = this.motion ? await this.from.getData(this.to, this.easing(progress)) : this.from;
+        computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle);
+        this.object.draw(this.transMatrix, frame);
     }
 }
 
-class Timeframe {
+export class Timeframe {
     start: number;
     duration: number;
     elements: Array<Element>;
-    progress: number;
-    _frame: number;
 
     constructor(start: number, duration: number) {
         this.start = start;
         this.duration = duration;
+        this.elements = [];
     }
 
     in(frame: number){
         return (this.start >= frame && frame <= this.start + this.duration);
-    }
-
-    get frame(){
-        return this._frame;
-    }
-
-    set frame(value: number){
-        if (value >= this.duration){
-            this._frame = 0;
-            return;
-        }
-        this._frame = value;
-        this.progress = value / this.duration;
-    }
-    
-    getData(progress: number){
-        let data = [];
-        this.elements.forEach(element => {
-            data.push(element.getData(progress));
-        });
-        return data;
     }
 
     split(splitPoint: number){
@@ -231,19 +217,78 @@ class Timeframe {
             this.addElement(i);
         }
     }
-
-    async draw(progress: number){
-
-    }
 }
 
-class TimeframeLayer {
-    elements: Array<Element>;
+export class TimeframeLayer {
+    frames: Array<Timeframe>;
+    duration: number;
 
+    constructor(){
+        this.frames = [];
+    }
+
+    async addElement(obj: timeElement, from: _Data, to: _Data = null, start: number, duration: number, continueFrom: number = 0){
+        let _dur = start + duration;
+        if (_dur > this.duration && start <= this.duration){
+            _dur -= this.duration;
+            this.duration += _dur;
+        }
+
+        // let elem = new Element(obj, from, to, continueFrom);
+        // await this.solveCollisions(await this.collision(start, duration), start, duration);
+        // let timeframe = await this.find(start, start + duration);
+        let timeFrame = await this.find(start, duration);
+        if (timeFrame){
+            timeFrame.addElement(new Element(obj, from, to, continueFrom))
+        } else {
+            let t = new Timeframe(start, duration);
+            t.addElement(new Element(obj, from, to, continueFrom));
+            let index = await this.findIndex(start, duration);
+            if (index === -1){
+                this.frames.push(t);
+            }else{
+                this.frames.splice(index + 1, 0, t);
+            }
+        }
+
+        return _dur;
+    }
+
+    // async solveCollisions(collisions: Array<Timeframe>, start: number, duration: number){
+
+    // }
+
+    async collision(start: number, duration: number){
+        return this.frames.filter((val) => {
+            if (start === val.start && duration === val.duration){
+                return false;
+            }
+            if (start >= val.start && val.start <= start + duration){
+                return true;
+            }
+            if (val.start >= start && start <= val.start + val.duration){
+                return true;
+            }
+            return false;
+        });
+    }
+
+    async findByFrame(frame: number) {
+        return this.frames.find((val) => {
+            return (val.start >= frame && frame <= val.start + val.duration);
+        });
+    }
+
+    async find(start: number, duration: number) {
+        return this.frames.find((val) => {
+            return (val.start === start && val.duration === duration)
+        });
+    }
     
-
-    async draw(parentData: Data, currentTimeframe: number, currentFrame: number, progress: number){
-
+    findIndex(start: number, duration: number) {
+        return this.frames.findIndex((val) => {
+            return (val.start < start)
+        });
     }
 }
 
@@ -268,80 +313,26 @@ export class Timeline {
         }
     }
 
-    addToLayer(data: _Data, start: number, duration: number, layer: number){
+    async addToLayer(obj: timeElement, from: _Data, to: _Data, start: number, duration: number, layer: number, continueFrom: number = 0){
         if (layer > this.layers.length - 1){
             throw "Layer out of range";
         }
 
-        // TODO
-
-        this.duration += duration;
+        this.duration += await this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);
         return this;
     }
 
-}
-
-export class TimelineInstance {
-    parentTimeline: Timeline;
-    _frame: number;
-    progress: number;
-    duration: number;
-    playing: boolean;
-    currentTimeframes: Array<number>;
-
-    constructor(parentTimeline: Timeline){
-        this.parentTimeline = parentTimeline;
-        this.frame = 0;
-        this.playing = false;
-        this.duration = parentTimeline.duration;
-        this.currentTimeframes = [];
-
-        for (let i = 0; i < this.parentTimeline.layers.length; ++i){
-            this.currentTimeframes.push(0);
-        }
-    }
-
-    resetProgress(){
-        this.frame = 0;
-    }
-
-    get frame(){
-        return this._frame;
-    }
-
-    set frame(value: number){
-        if (value >= this.duration){
-            if (this.parentTimeline.loop){
-                this._frame = 0;
+    async draw(matrix: Matrix, frame: number){
+        let timeFrame, _frame;
+        this.layers.forEach(async (layer) => {
+            timeFrame = await layer.findByFrame(frame);
+            if (!timeFrame){
+                return;
             }
-            return;
-        }
-        this._frame = value;
-        this.progress = value / this.duration;
-    }
-
-    play(){
-        this.playing = true;
-    }
-
-    pause(){
-        this.playing = false;
-    }
-
-    gotoAndPlay(frame: number){
-        this.frame = frame;
-        this.playing = true;
-    }
-
-    gotoAndPause(frame: number){
-        this.frame = frame;
-        this.playing = false;
-    }
-    
-    async draw(parentData: Data){
-        for (let i = this.parentTimeline.layers.length; i >= 0 ; --i){
-            await this.parentTimeline.layers[i].draw(parentData, this.currentTimeframes[i], this.frame, this.progress);
-        }
-        ++this.frame;
+            _frame = frame - timeFrame.start;
+            timeFrame.elements.forEach(async (element) => {
+                await element.draw(matrix, _frame);
+            });
+        });
     }
 }

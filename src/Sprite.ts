@@ -1,6 +1,7 @@
 import { Renderable } from './Renderable'
 import { _Color } from './Color'
 import { Base } from './Base'
+import { Matrix } from './Matrix'
 
 export class Sprite extends Renderable {
 	attribs: Object;
@@ -8,9 +9,11 @@ export class Sprite extends Renderable {
 
 	texture: WebGLTexture;
 	textureCoords: WebGLBuffer;
+	loop: boolean;
 
 	constructor(base: Base, img: ImageData) {
 		super(base, img.width, img.height);
+		this.loop = true;
 		this.program = base.defaultSpriteProgram;
 
 		this.texture = this.gl.createTexture();
@@ -64,14 +67,44 @@ export class Sprite extends Renderable {
 			this.program,
 			"uColor"
 		);
-		this.uniforms["mWorld"] = this.gl.getUniformLocation(
+		this.uniforms["transMatrix"] = this.gl.getUniformLocation(
 			this.program,
-			"mWorld"
+			"transMatrix"
 		);
 		this.uniforms["mProj"] = this.gl.getUniformLocation(this.program, "mProj");
 		this.uniforms["sampler"] = this.gl.getUniformLocation(
 			this.program,
 			"sampler"
 		);
+	}
+
+	async draw(matrix: Matrix){
+		if (this.base.lastUsedProgram !== this.program){
+			this.base.lastUsedProgram = this.program;
+			this.gl.useProgram(this.program);
+		}
+
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
+		this.gl.vertexAttribPointer(
+			this.attribs["textureCoords"],
+			2,
+			this.gl.FLOAT,
+			false,
+			2 * Float32Array.BYTES_PER_ELEMENT,
+			0
+		);
+		this.gl.enableVertexAttribArray(this.attribs["textureCoords"]);
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
+		this.gl.vertexAttribPointer(
+			this.attribs['position'],
+			2,
+			this.gl.FLOAT,
+			false,
+			2 * Float32Array.BYTES_PER_ELEMENT,
+			0
+		);
+		this.gl.enableVertexAttribArray(this.attribs['position']);
+		this.gl.uniformMatrix3fv(this.attribs['transMatrix'], false, matrix);
+		this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
 	}
 }

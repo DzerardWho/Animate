@@ -1,5 +1,5 @@
 import { vec2 } from './Base';
-import { instance } from './Instance';
+import { Instance } from './Instance';
 import { Rectangle } from './Rectangle';
 import { Sprite } from './Sprite';
 import { Base } from './Base';
@@ -10,7 +10,7 @@ export declare class Container {
     gl: WebGLRenderingContext;
     base: Base;
     parent: Container | Rectangle | Sprite;
-    instances: Array<instance>;
+    instances: Array<Instance>;
     x: number;
     y: number;
     og_width: number;
@@ -19,10 +19,11 @@ export declare class Container {
     height: number;
     private _angle;
     scale: vec2;
-    pivot: vec2;
-    constructor(base: Base, x: number, y: number, w: number, h: number, pivot?: vec2);
+    transformationPoint: vec2;
+    constructor(base: Base, x: number, y: number, w: number, h: number, transformationPoint?: vec2);
+    addChild(child: any, createInstance?: boolean): void;
     setParent(parent: any): void;
-    updateWorldMatrix(parentWorldMatrix?: Float32Array): void;
+    updateWorldMatrix(): void;
     moveTo(x: number, y: number): void;
     scaleAndRotate(): void;
     angle: number;

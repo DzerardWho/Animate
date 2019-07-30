@@ -1,16 +1,13 @@
-// import * as glMatrix from "gl-matrix";
 import { dvs, dfs, dsvs, dsfs } from './Programs'
-import { Container } from './Container'
-// import { Instance, instance } from './Instance'
-import { Instance } from './_Instance'
 import { Renderable } from './Renderable'
 import { Rectangle } from './Rectangle'
 import { Sprite } from './Sprite'
 import { Color, _Color } from './Color'
-import { Symbol } from './Symbol'
+import { Timeline } from './Timeline'
+import { createProjection, projectionMatrix, Matrix } from './Matrix'
 
 // TODO: Timeline ???
-
+// Rysować do canvasu tylko wtedy, gdy bedzie 'frame' się zwiększy
 export interface vec2 {
 	x: number;
 	y: number;
@@ -20,8 +17,7 @@ export class Base {
 	canvas: HTMLCanvasElement;
 	gl: WebGLRenderingContext;
 
-	scene: Container;
-	sceneInstance: Instance;
+	mainScene: Timeline;
 	backgroundColor: Color;
 
 	defaultShapeProgram: WebGLProgram;
@@ -29,11 +25,8 @@ export class Base {
 	defaultIndicesBuffer: WebGLBuffer;
 	indices: Uint16Array;
 
-	projectionMatrix: Float32Array;
-
-	objectsToDraw: Array<any | Instance>;
-	symbols: Array<Container | Renderable | Rectangle | Sprite | Symbol>;
-	renderQueue: Array<Instance>;
+	projectionMatrix: Matrix;
+	lastUsedProgram: WebGLProgram;
 
 	constructor(
 		width: number,
@@ -60,6 +53,8 @@ export class Base {
 
 		this.projectionMatrix = new Float32Array(9);
 		this.setCanvasSize(width, height);
+		this.lastUsedProgram = null;
+		this.mainScene = null;
 
 		if (bgC instanceof Color) {
 			this.backgroundColor = bgC;
@@ -74,152 +69,22 @@ export class Base {
 		this.gl.cullFace(this.gl.BACK);
 		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
-		this.objectsToDraw = [];
-		this.symbols = [];
-		this.renderQueue = [];
-		this.scene = new Container(this, 0, 0, 1, 1);
-		// this.sceneInstance = new Instance(this.scene);
-
-		// this.defaultIndicesBuffer = this.gl.createBuffer();
-		// this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.defaultIndicesBuffer);
-
-		// this.gl.bufferData(
-		// 	this.gl.ELEMENT_ARRAY_BUFFER,
-		// 	new Uint16Array([0, 1, 2, 2, 1, 3]),
-		// 	this.gl.STATIC_DRAW
-		// );
-
 		this.defaultShapeProgram = this.newProgram();
 		this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
-		// this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, this.indices, this.gl.STATIC_DRAW);
 	}
 
-	oldDraw() {
-		this.clear();
-		this.scene.updateWorldMatrix();
-		let lastProgram = null;
-		let child;
-		for (let i = 0; i < this.objectsToDraw.length; ++i) {
-			child = this.objectsToDraw[i];
-			if (child.program !== lastProgram) {
-				lastProgram = child.program;
-				this.gl.useProgram(lastProgram);
-			}
-
-			if (child.color) {
-				this.gl.uniform4fv(child.uniforms.uColor, child.color.buffer);
-			} else if (child.texture) {
-				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, child.textureCoords);
-				this.gl.vertexAttribPointer(
-					child.attribs.textureCoords,
-					2,
-					this.gl.FLOAT,
-					false,
-					2 * Float32Array.BYTES_PER_ELEMENT,
-					0
-				);
-				this.gl.enableVertexAttribArray(child.attribs.textureCoords);
-
-				this.gl.activeTexture(this.gl.TEXTURE0);
-				this.gl.bindTexture(this.gl.TEXTURE_2D, child.texture);
-				this.gl.uniform1i(child.uniforms.sampler, 0);
-			}
-			this.gl.bindBuffer(child.gl.ARRAY_BUFFER, child.shapeBuffer);
-			this.gl.vertexAttribPointer(
-				child.attribs.position,
-				2,
-				this.gl.FLOAT,
-				false,
-				2 * Float32Array.BYTES_PER_ELEMENT,
-				0
-			);
-			this.gl.enableVertexAttribArray(child.attribs.position);
-			this.gl.uniformMatrix3fv(
-				child.uniforms.mProj,
-				false,
-				this.projectionMatrix
-			);
-			this.gl.uniformMatrix3fv(child.uniforms.mWorld, false, child.worldMatrix);
-			this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
+	play(){
+		if (typeof this.mainScene == undefined){
+			return;
 		}
-	}
-
-	draw() {
-		this.clear();
-		// this.scene.updateWorldMatrix();
-		this.sceneInstance.updateWorldMatrix();
-		let lastProgram = null;
-
-		for (let item of this.renderQueue){
-			// if (!item.isChild){
-			// 	item.updateWorldMatrix();
-			// }
-			if (!item.visible || !item.source.program){
-				continue;
-			}
-			if (lastProgram !== item.source.program){
-				lastProgram = item.source.program;
-				this.gl.useProgram(lastProgram);
-			}
-			
-			if (item.source.color){
-				this.gl.uniform4fv(item.source.uniforms.uColor, item.source.color.buffer);
-			}else if (item.source.texture){
-				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, item.source.textureCoords);
-				this.gl.vertexAttribPointer(
-					item.source.attribs.textureCoords,
-					2,
-					this.gl.FLOAT,
-					false,
-					2 * Float32Array.BYTES_PER_ELEMENT,
-					0
-				);
-				this.gl.enableVertexAttribArray(item.source.attribs.textureCoords);
-				this.gl.activeTexture(this.gl.TEXTURE0);
-				this.gl.bindTexture(this.gl.TEXTURE_2D, item.source.texture);
-				this.gl.uniform1i(item.source.uniforms.sampler, 0);
-			}
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, item.source.shapeBuffer);
-			this.gl.vertexAttribPointer(
-				item.source.attribs.position,
-				2,
-				this.gl.FLOAT,
-				false,
-				2 * Float32Array.BYTES_PER_ELEMENT,
-				0
-			);
-			this.gl.enableVertexAttribArray(item.source.attribs.position);
-			this.gl.uniformMatrix3fv(
-				item.source.uniforms.mProj,
-				false,
-				this.projectionMatrix
-			);
-			this.gl.uniformMatrix3fv(
-				item.source.uniforms.mWorld,
-				false,
-				item.worldMatrix
-			);
-			this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
-			// this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_SHORT, 0);
-		}
-	}
-
-	createSceneInstance(){
-		this.sceneInstance = new Instance(this.scene);
-	}
-
-	finishInit(){
-		this.sceneInstance = new Instance(this.scene);
-		this.scene.children.forEach(child => {
-			// child.init();
-		});
+		this.mainScene.draw(this.projectionMatrix, 0);
 	}
 
 	setCanvasSize(width, height) {
 		this.canvas.width = width;
 		this.canvas.height = height;
 		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-		glMatrix.mat3.projection(this.projectionMatrix, width, height);
+		projectionMatrix(this.projectionMatrix, width, height);
 	}
 
 	compileShader(src: string, type: string) {

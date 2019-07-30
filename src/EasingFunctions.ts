@@ -37,23 +37,23 @@ export function easeInOutCubic(a: number){
 }
 
 export function easeInExpo(a: number){
-    if (a == 0){
+    if (a === 0){
         return 0;
     }
     return 2 ** (10 * (a - 1));
 }
 
 export function easeOutExpo(a: number){
-    if (a == 1){
+    if (a === 1){
         return 1;
     }
     return -(2 ** (-10 * a)) + 1;
 }
 
 export function easeInOutExpo(a: number){
-    if (a == 0){
+    if (a === 0){
         return 0;
-    }else if (a == 1){
+    }else if (a === 1){
         return 1;
     }else{
         a *= 2;

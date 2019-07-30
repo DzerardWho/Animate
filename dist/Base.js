@@ -1,12 +1,344 @@
+function computeMatrix(_in, out, pos, scale, trans, angle) {
+    let [a, b, , d, e, , g, h] = _in;
+    let x = pos.x, y = pos.y, px = trans.x, py = trans.y, sx = scale.x, sy = scale.y;
+    let s = Math.sin(angle), c = Math.cos(angle);
+    out[0] = sx * (c * a + s * d);
+    out[1] = sx * (c * b + s * e);
+    out[3] = sy * (c * d - s * a);
+    out[4] = sy * (c * e - s * b);
+    out[6] = a * (px * (1 - sx * c) + py * sy * s + x) + d * (py * (1 - sy * c) - px * sx * s + y) + g;
+    out[7] = b * (px * (1 - sx * c) + py * sy * s + x) + e * (py * (1 - sy * c) - px * sx * s + y) + h;
+    out[2] = out[5] = 0;
+    out[8] = 1;
+    return out;
+}
+function projectionMatrix(out, width, height) {
+    out[0] = 2 / width;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = -2 / height;
+    out[5] = 0;
+    out[6] = -1;
+    out[7] = 1;
+    out[8] = 1;
+    return out;
+}
+
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+
+function __awaiter(thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+}
+
+function Linear(a) {
+    return a;
+}
+
+class Data {
+    constructor(data) {
+        if (!data) {
+            return this;
+        }
+        this.pos = { x: data.pos.x, y: data.pos.y };
+        this.angle = data.angle;
+        this.scale = { x: 1, y: 1 };
+        this.transformationPoint = { x: 0, y: 0 };
+        if (data.scale) {
+            if (data.scale.x) {
+                this.scale.x = data.scale.x;
+            }
+            if (data.scale.y) {
+                this.scale.y = data.scale.y;
+            }
+        }
+        if (data.transformationPoint) {
+            if (data.transformationPoint.x) {
+                this.transformationPoint.x = data.transformationPoint.x;
+            }
+            if (data.scale.y) {
+                this.transformationPoint.y = data.transformationPoint.y;
+            }
+        }
+        this.alpha = 1;
+    }
+    // get x(){
+    //     return this._x;
+    // }
+    // set x(value: number){
+    //     if (this._x === value){
+    //         return;
+    //     }
+    //     this._x = value;
+    //     this.dirty = true;
+    // }
+    // get y(){
+    //     return this._y;
+    // }
+    // set y(value: number){
+    //     if (this._y === value){
+    //         return;
+    //     }
+    //     this._y = value;
+    //     this.dirty = true;
+    // }
+    // get angle(){
+    //     return this._angle;
+    // }
+    // set angle(value: number){
+    //     if (this._angle === value){
+    //         return;
+    //     }
+    //     this._angle = value;
+    //     this.dirty = true;
+    // }
+    // get scale(){
+    //     return this._scale;
+    // }
+    // set scale(value: vec2){
+    //     if (this._scale === value){
+    //         return;
+    //     }
+    //     this._scale = value;
+    //     this.dirty = true;
+    // }
+    // get transformationPoint(){
+    //     return this._transformationPoint;
+    // }
+    // set transformationPoint(value: vec2){
+    //     if (this._transformationPoint === value){
+    //         return;
+    //     }
+    //     this._transformationPoint = value;
+    //     this.dirty = true;
+    // }
+    // get alpha(){
+    //     return this._alpha;
+    // }
+    // set alpha(value: number){
+    //     if (this._alpha === value){
+    //         return;
+    //     }
+    //     this._alpha = value;
+    //     this.dirty = true;
+    // }
+    getData(to, progress) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let alpha = this.alpha + (to.alpha - this.alpha) * progress;
+            if (alpha < 0) {
+                alpha = 0;
+            }
+            else if (alpha > 1) {
+                alpha = 1;
+            }
+            return {
+                pos: {
+                    x: this.pos.x + (to.pos.x - this.pos.x) * progress,
+                    y: this.pos.y + (to.pos.y - this.pos.y) * progress
+                },
+                angle: this.angle + (to.angle - this.angle) * progress,
+                scale: {
+                    x: this.scale.x + (to.scale.x - this.scale.x) * progress,
+                    y: this.scale.y + (to.scale.y - this.scale.y) * progress,
+                },
+                transformationPoint: {
+                    x: this.transformationPoint.x + (to.transformationPoint.x - this.transformationPoint.x) * progress,
+                    y: this.transformationPoint.y + (to.transformationPoint.y - this.transformationPoint.y) * progress,
+                },
+                alpha: alpha
+            };
+        });
+    }
+}
+class Element {
+    constructor(obj, from, to, continueFromFrame = 0) {
+        this.motion = to ? true : false;
+        this.easing = this.motion ? Linear : null;
+        this.to = this.motion ? new Data(to) : null;
+        // this.val = this.motion ? new Data(null) : null;
+        this.from = new Data(from);
+        this.object = obj;
+        this.continueFrom = continueFromFrame || 0;
+    }
+    draw(parentMatrix, frame, duration) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let progress;
+            frame += this.continueFrom;
+            if (frame > duration) {
+                if (this.object.loop) {
+                    frame %= duration;
+                }
+                else {
+                    return;
+                }
+            }
+            progress = frame / duration;
+            let data = this.motion ? yield this.from.getData(this.to, this.easing(progress)) : this.from;
+            computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle);
+            this.object.draw(this.transMatrix, frame);
+        });
+    }
+}
+class Timeframe {
+    constructor(start, duration) {
+        this.start = start;
+        this.duration = duration;
+        this.elements = [];
+    }
+    in(frame) {
+        return (this.start >= frame && frame <= this.start + this.duration);
+    }
+    split(splitPoint) {
+        let t = splitPoint - this.start;
+        let s = new Timeframe(splitPoint, this.duration - t);
+        this.duration = t;
+        s.addElements(this.elements);
+    }
+    addElement(element) {
+        this.elements.push(element);
+    }
+    addElements(elements) {
+        for (let i of elements) {
+            this.addElement(i);
+        }
+    }
+}
+class TimeframeLayer {
+    constructor() {
+        this.frames = [];
+    }
+    addElement(obj, from, to = null, start, duration, continueFrom = 0) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let _dur = start + duration;
+            if (_dur > this.duration && start <= this.duration) {
+                _dur -= this.duration;
+                this.duration += _dur;
+            }
+            // let elem = new Element(obj, from, to, continueFrom);
+            // await this.solveCollisions(await this.collision(start, duration), start, duration);
+            // let timeframe = await this.find(start, start + duration);
+            let timeFrame = yield this.find(start, duration);
+            if (timeFrame) {
+                timeFrame.addElement(new Element(obj, from, to, continueFrom));
+            }
+            else {
+                let t = new Timeframe(start, duration);
+                t.addElement(new Element(obj, from, to, continueFrom));
+                let index = yield this.findIndex(start, duration);
+                if (index === -1) {
+                    this.frames.push(t);
+                }
+                else {
+                    this.frames.splice(index + 1, 0, t);
+                }
+            }
+            return _dur;
+        });
+    }
+    // async solveCollisions(collisions: Array<Timeframe>, start: number, duration: number){
+    // }
+    collision(start, duration) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.frames.filter((val) => {
+                if (start === val.start && duration === val.duration) {
+                    return false;
+                }
+                if (start >= val.start && val.start <= start + duration) {
+                    return true;
+                }
+                if (val.start >= start && start <= val.start + val.duration) {
+                    return true;
+                }
+                return false;
+            });
+        });
+    }
+    findByFrame(frame) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.frames.find((val) => {
+                return (val.start >= frame && frame <= val.start + val.duration);
+            });
+        });
+    }
+    find(start, duration) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.frames.find((val) => {
+                return (val.start === start && val.duration === duration);
+            });
+        });
+    }
+    findIndex(start, duration) {
+        return this.frames.findIndex((val) => {
+            return (val.start < start);
+        });
+    }
+}
+class Timeline {
+    constructor() {
+        this.loop = false;
+        this.layers = [];
+        this.duration = 0;
+    }
+    addLayer() {
+        this.layers.push(new TimeframeLayer);
+    }
+    addLayers(count) {
+        for (let i = 0; i < count; ++i) {
+            this.addLayer();
+        }
+    }
+    addToLayer(obj, from, to, start, duration, layer, continueFrom = 0) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (layer > this.layers.length - 1) {
+                throw "Layer out of range";
+            }
+            this.duration += yield this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);
+            return this;
+        });
+    }
+    draw(matrix, frame) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let timeFrame, _frame;
+            this.layers.forEach((layer) => __awaiter(this, void 0, void 0, function* () {
+                timeFrame = yield layer.findByFrame(frame);
+                if (!timeFrame) {
+                    return;
+                }
+                _frame = frame - timeFrame.start;
+                timeFrame.elements.forEach((element) => __awaiter(this, void 0, void 0, function* () {
+                    yield element.draw(matrix, _frame);
+                }));
+            }));
+        });
+    }
+}
+
 const dvs = `precision mediump float;
 
 attribute vec2 aPosition;
 
-uniform mat3 mWorld;
-uniform mat3 mProj;
+uniform mat3 transMatrix;
 
 void main(){
-    gl_Position = vec4((mWorld * vec3(aPosition, 1)).xy, 0, 1);
+    gl_Position = vec4((transMatrix * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
 }`;
 const dfs = `precision mediump float;
 
@@ -20,14 +352,13 @@ const dsvs = `precision mediump float;
 attribute vec2 aPosition;
 attribute vec2 aTextureCoords;
 
-uniform mat3 mWorld;
-uniform mat3 mProj;
+uniform mat3 transMatrix;
 
 varying vec2 f_texCoord;
 
 void main(){
 	f_texCoord = aTextureCoords;
-    gl_Position = vec4((mWorld * vec3(aPosition, 1)).xy, 0, 1);
+    gl_Position = vec4((transMatrix * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
 }`;
 const dsfs = `precision mediump float;
 
@@ -38,151 +369,19 @@ void main(){
 	gl_FragColor = texture2D(sampler, f_texCoord);
 }`;
 
-class Container {
-    constructor(base, x, y, w, h, transformationPoint = { x: 0, y: 0 }) {
-        this.children = [];
-        this.program = null;
-        this.color = null;
-        this.localMatrix = glMatrix.mat3.identity(new Float32Array(9));
-        this.worldMatrix = glMatrix.mat3.identity(new Float32Array(9));
+class Renderable {
+    constructor(base, w, h) {
         this.base = base;
         this.gl = base.gl;
-        this.x = x;
-        this.y = y;
-        this.og_width = w;
-        this.og_height = h;
-        this.width = this.og_width;
-        this.height = this.og_height;
-        this.angle = 0;
-        this.scale = { x: 1, y: 1 };
-        this.instances = [];
-        this.transformationPoint = { x: transformationPoint["x"], y: transformationPoint["y"] };
-        this.base.symbols.push(this);
-    }
-    addChild(child, createInstance = false) {
-        if (!child) {
-            return;
-        }
-        if (child.parent) {
-            let ndx = child.parent.children.indexOf(child.source);
-            if (ndx >= 0) {
-                child.parent.children.splice(ndx, 1);
-            }
-        }
-        child.parent = this;
-        this.children.push(child);
-        if (createInstance) {
-            this.instances.forEach(instance => {
-                instance.addChild(child);
-            });
-        }
-    }
-    setParent(parent) {
-        if (this.parent) {
-            let ndx = this.parent.children.indexOf(this);
-            if (ndx >= 0) {
-                this.parent.children.splice(ndx, 1);
-            }
-        }
-        if (parent) {
-            parent.children.push(this);
-        }
-        this.parent = parent;
-    }
-    updateWorldMatrix() {
-        this.instances.forEach(instance => {
-            instance.updateWorldMatrix();
-        });
-    }
-    moveTo(x, y) {
-        glMatrix.mat3.translate(this.worldMatrix, this.worldMatrix, [x, y]);
-    }
-    scaleAndRotate() {
-        this.moveTo(this.transformationPoint["x"], this.transformationPoint["y"]);
-        glMatrix.mat3.scale(this.worldMatrix, this.worldMatrix, [
-            this.scale.x,
-            this.scale.y
-        ]);
-        glMatrix.mat3.rotate(this.worldMatrix, this.worldMatrix, this.angle);
-        this.moveTo(-this.transformationPoint["x"], -this.transformationPoint["y"]);
-    }
-    get angle() {
-        return this._angle;
-    }
-    set angle(a) {
-        this._angle = glMatrix.glMatrix.toRadian(a);
-    }
-}
-
-class Instance {
-    constructor(source, isChild = false) {
-        this.source = source;
-        this.visible = true;
-        this.x = source.x;
-        this.y = source.y;
-        this.angle = source.angle;
-        this.scale = source.scale;
-        this.transformationPoint = source.transformationPoint;
-        this.children = [];
-        // this.localMatrix = new Float32Array(9);
-        this.worldMatrix = new Float32Array(9);
-        this.buffer = source.gl.createFramebuffer();
-        this.isChild = isChild;
-        this.source.base.renderQueue.push(this);
-        source.children.forEach(child => {
-            this.children.push(new Instance(child, true));
-        });
-        source.instances.push(this);
-    }
-    updateWorldMatrix(parentWorldMatrix) {
-        // glMatrix.mat3.fromTranslation(this.worldMatrix, [this.x, this.y]);
-        // this.scaleAndRotate();
-        if (parentWorldMatrix) {
-            glMatrix.mat3.copy(this.worldMatrix, parentWorldMatrix);
-            // glMatrix.mat3.multiply(this.worldMatrix, parentWorldMatrix, this.worldMatrix);
-        }
-        this.moveTo(this.x, this.y);
-        this.scaleAndRotate();
-        let worldMatrix = this.worldMatrix;
-        this.children.forEach(child => {
-            child.updateWorldMatrix(worldMatrix);
-        });
-    }
-    moveTo(x, y) {
-        glMatrix.mat3.translate(this.worldMatrix, this.worldMatrix, [x, y]);
-    }
-    scaleAndRotate() {
-        // this.moveTo(this.transformationPoint["x"], this.transformationPoint["y"]);
-        glMatrix.mat3.scale(this.worldMatrix, this.worldMatrix, [
-            this.scale.x,
-            this.scale.y
-        ]);
-        glMatrix.mat3.rotate(this.worldMatrix, this.worldMatrix, this.angle);
-        // this.moveTo(-this.transformationPoint["x"], -this.transformationPoint["y"]);
-    }
-    addChild(child) {
-        this.children.push(new Instance(child, true));
-    }
-}
-
-class Renderable extends Container {
-    constructor(base, x, y, w, h, transformationPoint = { x: 0, y: 0 }) {
-        super(base, x, y, w, h, transformationPoint);
         this.shapeBuffer = this.gl.createBuffer();
-        this.indicesBuffer = base.defaultIndicesBuffer;
         this.attribs = {};
         this.uniforms = {};
-        this.base.objectsToDraw.push(this);
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
-            0,
-            0,
-            0,
-            this.height,
-            this.width,
-            0,
-            this.width,
-            this.height
+            0, 0,
+            0, h,
+            w, 0,
+            w, h
         ]), this.gl.STATIC_DRAW);
     }
 }
@@ -248,21 +447,37 @@ class Color {
 }
 
 class Rectangle extends Renderable {
-    constructor(base, x, y, w, h, c = [1, 1, 1, 1]) {
-        super(base, x, y, w, h);
+    constructor(base, w, h, c = [1, 1, 1, 1]) {
+        super(base, w, h);
+        this.loop = true;
         this.program = base.defaultShapeProgram;
         this.color = new Color(c);
         this.attribs["aPosition"] = this.gl.getAttribLocation(this.program, "aPosition");
         this.gl.enableVertexAttribArray(this.attribs["aPosition"]);
         this.uniforms["uColor"] = this.gl.getUniformLocation(this.program, "uColor");
-        this.uniforms["mWorld"] = this.gl.getUniformLocation(this.program, "mWorld");
+        this.uniforms["transMatrix"] = this.gl.getUniformLocation(this.program, "transMatrix");
         this.uniforms["mProj"] = this.gl.getUniformLocation(this.program, "mProj");
+    }
+    draw(matrix, frame) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.base.lastUsedProgram !== this.program) {
+                this.base.lastUsedProgram = this.program;
+                this.gl.useProgram(this.program);
+            }
+            this.gl.uniform4fv(this.attribs['uColor'], this.color.buffer);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
+            this.gl.vertexAttribPointer(this.attribs['position'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+            this.gl.enableVertexAttribArray(this.attribs['position']);
+            this.gl.uniformMatrix3fv(this.attribs['transMatrix'], false, matrix);
+            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+        });
     }
 }
 
 class Sprite extends Renderable {
-    constructor(base, img, x, y) {
-        super(base, x, y, img.width, img.height);
+    constructor(base, img) {
+        super(base, img.width, img.height);
+        this.loop = true;
         this.program = base.defaultSpriteProgram;
         this.texture = this.gl.createTexture();
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
@@ -277,15 +492,30 @@ class Sprite extends Renderable {
         this.attribs["position"] = this.gl.getAttribLocation(this.program, "aPosition");
         this.attribs["textureCoords"] = this.gl.getAttribLocation(this.program, "aTextureCoords");
         this.uniforms["uColor"] = this.gl.getUniformLocation(this.program, "uColor");
-        this.uniforms["mWorld"] = this.gl.getUniformLocation(this.program, "mWorld");
+        this.uniforms["transMatrix"] = this.gl.getUniformLocation(this.program, "transMatrix");
         this.uniforms["mProj"] = this.gl.getUniformLocation(this.program, "mProj");
         this.uniforms["sampler"] = this.gl.getUniformLocation(this.program, "sampler");
     }
+    draw(matrix) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.base.lastUsedProgram !== this.program) {
+                this.base.lastUsedProgram = this.program;
+                this.gl.useProgram(this.program);
+            }
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
+            this.gl.vertexAttribPointer(this.attribs["textureCoords"], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+            this.gl.enableVertexAttribArray(this.attribs["textureCoords"]);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
+            this.gl.vertexAttribPointer(this.attribs['position'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+            this.gl.enableVertexAttribArray(this.attribs['position']);
+            this.gl.uniformMatrix3fv(this.attribs['transMatrix'], false, matrix);
+            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+        });
+    }
 }
 
-// import * as glMatrix from "gl-matrix";
 class Base {
-    constructor(width, height, canvas_id, bgC = [-1, -1, -1, -1], webgl2 = false) {
+    constructor(width, height, canvas_id, bgC = [-1, -1, -1, -1], webgl2 = false, fps = 25) {
         this.canvas = document.getElementById(canvas_id);
         if (this.canvas.nodeName != "CANVAS") {
             this.canvas = document.createElement("canvas");
@@ -298,6 +528,8 @@ class Base {
         }
         this.projectionMatrix = new Float32Array(9);
         this.setCanvasSize(width, height);
+        this.lastUsedProgram = null;
+        this.mainScene = null;
         if (bgC instanceof Color) {
             this.backgroundColor = bgC;
         }
@@ -309,127 +541,20 @@ class Base {
         this.gl.enable(this.gl.BLEND);
         this.gl.cullFace(this.gl.BACK);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-        this.objectsToDraw = [];
-        this.symbols = [];
-        this.renderQueue = [];
-        this.scene = new Container(this, 0, 0, 1, 1);
-        // this.sceneInstance = new Instance(this.scene);
-        this.defaultIndicesBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.defaultIndicesBuffer);
-        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 2, 1, 3]), this.gl.STATIC_DRAW);
         this.defaultShapeProgram = this.newProgram();
         this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
-        // this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, this.indices, this.gl.STATIC_DRAW);
     }
-    oldDraw() {
-        this.clear();
-        this.scene.updateWorldMatrix();
-        let lastProgram = null;
-        let child;
-        for (let i = 0; i < this.objectsToDraw.length; ++i) {
-            child = this.objectsToDraw[i];
-            if (child.program !== lastProgram) {
-                lastProgram = child.program;
-                this.gl.useProgram(lastProgram);
-            }
-            if (child.color) {
-                this.gl.uniform4fv(child.uniforms.uColor, child.color.buffer);
-            }
-            else if (child.texture) {
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, child.textureCoords);
-                this.gl.vertexAttribPointer(child.attribs.textureCoords, 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-                this.gl.enableVertexAttribArray(child.attribs.textureCoords);
-                this.gl.activeTexture(this.gl.TEXTURE0);
-                this.gl.bindTexture(this.gl.TEXTURE_2D, child.texture);
-                this.gl.uniform1i(child.uniforms.sampler, 0);
-            }
-            this.gl.bindBuffer(child.gl.ARRAY_BUFFER, child.shapeBuffer);
-            this.gl.vertexAttribPointer(child.attribs.position, 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-            this.gl.enableVertexAttribArray(child.attribs.position);
-            this.gl.uniformMatrix3fv(child.uniforms.mProj, false, this.projectionMatrix);
-            this.gl.uniformMatrix3fv(child.uniforms.mWorld, false, child.worldMatrix);
-            this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
+    play() {
+        if (typeof this.mainScene == undefined) {
+            return;
         }
-    }
-    draw() {
-        this.clear();
-        // this.scene.updateWorldMatrix();
-        this.sceneInstance.updateWorldMatrix(this.projectionMatrix);
-        let lastProgram = null;
-        for (let item of this.renderQueue) {
-            // if (!item.isChild){
-            // 	item.updateWorldMatrix();
-            // }
-            if (!item.visible || !item.source.program) {
-                continue;
-            }
-            if (lastProgram !== item.source.program) {
-                lastProgram = item.source.program;
-                this.gl.useProgram(lastProgram);
-            }
-            if (item.source.color) {
-                this.gl.uniform4fv(item.source.uniforms.uColor, item.source.color.buffer);
-            }
-            else if (item.source.texture) {
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, item.source.textureCoords);
-                this.gl.vertexAttribPointer(item.source.attribs.textureCoords, 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-                this.gl.enableVertexAttribArray(item.source.attribs.textureCoords);
-                this.gl.activeTexture(0);
-                this.gl.bindTexture(this.gl.TEXTURE_2D, item.source.texture);
-                this.gl.uniform1i(item.source.uniforms.sampler, 0);
-            }
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, item.source.shapeBuffer);
-            this.gl.vertexAttribPointer(item.source.attribs.position, 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-            this.gl.enableVertexAttribArray(item.source.attribs.position);
-            this.gl.uniformMatrix3fv(item.source.uniforms.mProj, false, this.projectionMatrix);
-            this.gl.uniformMatrix3fv(item.source.uniforms.mWorld, false, item.worldMatrix);
-            this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
-        }
-    }
-    _draw() {
-        this.clear();
-        // this.scene.updateWorldMatrix();
-        // this.sceneInstance.updateWorldMatrix();
-        let lastProgram = null;
-        for (let item of this.renderQueue) {
-            // if (!item.isChild){
-            // 	item.updateWorldMatrix();
-            // }
-            if (!item.visible || !item.source.program) {
-                continue;
-            }
-            if (lastProgram !== item.source.program) {
-                lastProgram = item.source.program;
-                this.gl.useProgram(lastProgram);
-            }
-            if (item.source.color) {
-                this.gl.uniform4fv(item.source.uniforms.uColor, item.source.color.buffer);
-            }
-            else if (item.source.texture) {
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, item.source.textureCoords);
-                this.gl.vertexAttribPointer(item.source.attribs.textureCoords, 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-                this.gl.enableVertexAttribArray(item.source.attribs.textureCoords);
-                this.gl.activeTexture(0);
-                this.gl.bindTexture(this.gl.TEXTURE_2D, item.source.texture);
-                this.gl.uniform1i(item.source.uniforms.sampler, 0);
-            }
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, item.source.shapeBuffer);
-            this.gl.vertexAttribPointer(item.source.attribs.position, 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-            this.gl.enableVertexAttribArray(item.source.attribs.position);
-            this.gl.uniformMatrix3fv(item.source.uniforms.mProj, false, this.projectionMatrix);
-            this.gl.uniformMatrix3fv(item.source.uniforms.mWorld, false, item.worldMatrix);
-            this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
-            this.gl.flush();
-        }
-    }
-    createSceneInstance() {
-        this.sceneInstance = new Instance(this.scene);
+        this.mainScene.draw(this.projectionMatrix, 0);
     }
     setCanvasSize(width, height) {
         this.canvas.width = width;
         this.canvas.height = height;
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-        glMatrix.mat3.projection(this.projectionMatrix, width, height);
+        projectionMatrix(this.projectionMatrix, width, height);
     }
     compileShader(src, type) {
         let t;

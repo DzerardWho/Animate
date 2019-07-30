@@ -1,10 +1,10 @@
-import { Container } from './Container';
-import { vec2, Base } from './Base';
-export declare class Renderable extends Container {
+import { Base } from './Base';
+export declare class Renderable {
     attribs: Object;
     uniforms: Object;
     shapeBuffer: WebGLBuffer;
-    indicesBuffer: WebGLBuffer;
     program: WebGLProgram;
-    constructor(base: Base, x?: number, y?: number, w?: number, h?: number, pivot?: vec2);
+    gl: WebGLRenderingContext;
+    base: Base;
+    constructor(base: Base, w: number, h: number);
 }
