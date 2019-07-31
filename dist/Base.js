@@ -176,7 +176,7 @@ class TimeframeLayer {
     }
     findByFrame(frame) {
         return this.frames.find((val) => {
-            return (val.start >= frame && frame <= val.start + val.duration);
+            return (val.start <= frame && frame < val.start + val.duration);
         });
     }
     find(start, duration) {

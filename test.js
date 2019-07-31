@@ -13,6 +13,7 @@ function initDemo() {
     img.onload = () => {
         headimg.onload = () => {
             t = new Rectangle(b, 500, 100, [50, 160, 99]);
+            t2 = new Rectangle(b, 500, 100, [224, 33, 141]);
             body = new Sprite(b, img);
             head = new Sprite(b, headimg);
 
@@ -40,14 +41,31 @@ function initDemo() {
                 },
                 angle: 0
             }, null, 0, 5, 0, 0);
+            john.addToLayer(t2, {
+                pos: {
+                    x: 60,
+                    y: 30
+                },
+                angle: 0
+            }, null, 3, 8, 0, 0);
             mainTimeline.addToLayer(john, {
                 pos: {
                     x: 20,
                     y: 100
                 },
                 angle: 0
-            }, null, 1, 5, 0, 0);
+            }, {
+                pos: {
+                    x: 100,
+                    y: 200
+                },
+                angle: 0
+            }, 1, 20, 0, 0);
             b.play();
+            setInterval(() => {
+                b.frame = (b.frame + 1) % 21;
+                b.play();
+            }, 1000/25);
         }
         slider = document.getElementById('range');
         slider.oninput = () => {

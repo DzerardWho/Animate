@@ -230,6 +230,8 @@ export class TimeframeLayer {
     }
 
      addElement(obj: timeElement, from: _Data, to: _Data = null, start: number, duration: number, continueFrom: number = 0){
+        // TODO 
+        // Coś tu nie działa
         let _dur = start + duration;
         if (_dur > this.duration && start <= this.duration){
             _dur -= this.duration;
@@ -277,7 +279,7 @@ export class TimeframeLayer {
 
      findByFrame(frame: number) {
         return this.frames.find((val) => {
-            return (val.start >= frame && frame <= val.start + val.duration);
+            return (val.start <= frame && frame < val.start + val.duration);
         });
     }
 
