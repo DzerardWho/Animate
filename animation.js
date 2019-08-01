@@ -6,7 +6,7 @@ function init(){
     john = new Timeline(false);
     let tl = new Timeline(true);
     tl.addLayer();
-    tl.addToLayer(john, {pos: {x: 50, y: 50}, scale: {x: 0.75, y: 0.75}}, null, 0, 107, 0, 0);
+    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: 0.75, y: 0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: 0.69999695, y: 0.69999695}}, 0, 107, 0, 0);
     base.mainTimeline = tl;
     john.addLayers(7);
     let queue = new createjs.LoadQueue();
