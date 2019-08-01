@@ -33,8 +33,8 @@ export class Rectangle extends Renderable {
 		);
 	}
 
-	 draw(matrix: Matrix, frame: number){
-		if (this.base.lastUsedProgram !== this.program){
+	draw(matrix: Matrix, frame: number) {
+		if (this.base.lastUsedProgram !== this.program) {
 			this.base.lastUsedProgram = this.program;
 			this.gl.useProgram(this.program);
 		}

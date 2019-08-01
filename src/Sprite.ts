@@ -78,8 +78,8 @@ export class Sprite extends Renderable {
 		);
 	}
 
-	 draw(matrix: Matrix){
-		if (this.base.lastUsedProgram !== this.program){
+	draw(matrix: Matrix) {
+		if (this.base.lastUsedProgram !== this.program) {
 			this.base.lastUsedProgram = this.program;
 			this.gl.useProgram(this.program);
 		}

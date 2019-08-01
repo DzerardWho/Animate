@@ -2,6 +2,8 @@ import { vec2 } from './Base'
 
 export type Matrix = Array<number> | Float32Array;
 
+const degToRad = Math.PI / 180;
+
 export function computeMatrix(_in: Matrix, out: Matrix, pos: vec2, scale: vec2, trans: vec2, angle: number): Matrix {
     let [a, b, , d, e, , g, h] = _in;
     let x = pos.x,
@@ -10,6 +12,7 @@ export function computeMatrix(_in: Matrix, out: Matrix, pos: vec2, scale: vec2, 
         py = trans.y,
         sx = scale.x,
         sy = scale.y;
+    angle *= degToRad;
     let s = Math.sin(angle),
         c = Math.cos(angle);
 

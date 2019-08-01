@@ -5,10 +5,10 @@ let slider;
 let i = 1;
 
 function initDemo() {
-    b = new Base(650, 450, 'canvas', false);
+    b = new Base(false, 650, 450, 'canvas', 24);
     img = new Image();
-    mainTimeline = new Timeline();
-    b.mainScene = mainTimeline;
+    mainTimeline = new Timeline(true);
+    b.mainTimeline = mainTimeline;
     headimg = new Image();
     img.onload = () => {
         headimg.onload = () => {
@@ -62,16 +62,16 @@ function initDemo() {
                 angle: 0
             }, 1, 20, 0, 0);
             b.play();
-            setInterval(() => {
-                b.frame = (b.frame + 1) % 21;
-                b.play();
-            }, 1000/25);
+            // setInterval(() => {
+            //     b.frame = (b.frame + 1) % 21;
+            //     b.play();
+            // }, 1000/13);
         }
-        slider = document.getElementById('range');
-        slider.oninput = () => {
-            b.mainScene.layers[0].frames[0].elements[0].from.pos.x = Number(slider.value) * 10;
-            b.play();
-        }
+        // slider = document.getElementById('range');
+        // slider.oninput = () => {
+        //     b.mainScene.layers[0].frames[0].elements[0].from.pos.x = Number(slider.value) * 10;
+        //     b.play();
+        // }
         headimg.src = 'test/smieci/John_Egbert4.png'
     }
     img.src = "test/smieci/John_Egbert3.png";

@@ -1,6 +1,8 @@
+const degToRad = Math.PI / 180;
 function computeMatrix(_in, out, pos, scale, trans, angle) {
     let [a, b, , d, e, , g, h] = _in;
     let x = pos.x, y = pos.y, px = trans.x, py = trans.y, sx = scale.x, sy = scale.y;
+    angle *= degToRad;
     let s = Math.sin(angle), c = Math.cos(angle);
     out[0] = sx * (c * a + s * d);
     out[1] = sx * (c * b + s * e);
@@ -24,6 +26,19 @@ function projectionMatrix(out, width, height) {
     out[8] = 1;
     return out;
 }
+function createProjection(width, height) {
+    return new Float32Array([
+        2 / width,
+        0,
+        0,
+        0,
+        -2 / height,
+        0,
+        -1,
+        1,
+        1
+    ]);
+}
 
 function Linear(a) {
     return a;
@@ -34,8 +49,16 @@ class Data {
         if (!data) {
             return this;
         }
-        this.pos = { x: data.pos.x, y: data.pos.y };
-        this.angle = data.angle;
+        this.pos = { x: 0, y: 0 };
+        if (data.pos) {
+            if (data.pos.x) {
+                this.pos.x = data.pos.x;
+            }
+            if (data.pos.y) {
+                this.pos.y = data.pos.y;
+            }
+        }
+        this.angle = data.angle || 0;
         this.scale = { x: 1, y: 1 };
         this.transformationPoint = { x: 0, y: 0 };
         if (data.scale) {
@@ -100,7 +123,7 @@ class Element {
                 frame %= duration;
             }
             else {
-                return;
+                frame = duration;
             }
         }
         progress = frame / duration;
@@ -191,8 +214,8 @@ class TimeframeLayer {
     }
 }
 class Timeline {
-    constructor() {
-        this.loop = false;
+    constructor(loop = false) {
+        this.loop = loop;
         this.layers = [];
         this.duration = 0;
     }
@@ -214,6 +237,9 @@ class Timeline {
     draw(matrix, frame) {
         let timeFrame, _frame;
         this.layers.forEach((layer) => {
+            if (this.loop) {
+                frame %= this.duration;
+            }
             timeFrame = layer.findByFrame(frame);
             if (!timeFrame) {
                 return;
@@ -406,6 +432,67 @@ class Sprite extends Renderable {
     }
 }
 
+class Renderer {
+    constructor(base, fps, width, height, bgColor) {
+        if (fps <= 0) {
+            throw "Fps must be a positive number";
+        }
+        this.gl = base.gl;
+        this.timing = 1000 / fps;
+        this.timeToNextUpdate = this.timing;
+        this.lastUpdate = 0;
+        this.frame = 0;
+        this.mainTimeline = null;
+        this.isPlaying = false;
+        this.projectionMatrix = createProjection(width, height);
+        this.backgroundColor = bgColor;
+        this.render = this.render.bind(this);
+        this.update = this.update.bind(this);
+    }
+    play() {
+        if (!this.isPlaying) {
+            this.isPlaying = true;
+            this.render();
+            setTimeout(() => {
+                this.update();
+                this.updateInterval = setInterval(this.update, this.timing);
+            }, this.timeToNextUpdate);
+        }
+    }
+    pause() {
+        if (this.isPlaying) {
+            clearInterval(this.updateInterval);
+            this.timeToNextUpdate -= performance.now() - this.lastUpdate;
+            this.isPlaying = false;
+        }
+    }
+    update() {
+        if (this.isPlaying) {
+            ++this.frame;
+            this.frameUpdated = true;
+            requestAnimationFrame(this.render);
+            this.lastUpdate = performance.now();
+            this.timeToNextUpdate = this.timing;
+        }
+    }
+    render() {
+        if (!this.mainTimeline) {
+            throw "There is nothing to render (mainTimeline isn't set)";
+        }
+        if (!(this.frameUpdated && this.isPlaying)) {
+            return;
+        }
+        this.frameUpdated = false;
+        this.clear();
+        this.mainTimeline.draw(this.projectionMatrix, this.frame);
+        requestAnimationFrame(this.render);
+    }
+    clear() {
+        this.gl.clearColor(this.backgroundColor.r, this.backgroundColor.g, this.backgroundColor.b, this.backgroundColor.a);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    }
+}
+
 function logGLCall(functionName, args) {
     console.log("gl." + functionName + "(" +
         WebGLDebugUtils.glFunctionArgsToString(functionName, args) + ")");
@@ -426,7 +513,7 @@ function throwOnGLError(err, funcName, args) {
     throw WebGLDebugUtils.glEnumToString(err) + " was caused by call to: " + funcName;
 }
 class Base {
-    constructor(width, height, canvas_id, debug = false, bgC = [-1, -1, -1, -1], webgl2 = false, fps = 25) {
+    constructor(debug = false, width, height, canvas_id, fps = 25, webgl2 = false, bgC = [-1, -1, -1, -1]) {
         this.canvas = document.getElementById(canvas_id);
         if (this.canvas.nodeName != "CANVAS") {
             this.canvas = document.createElement("canvas");
@@ -440,36 +527,19 @@ class Base {
         if (debug) {
             this.gl = WebGLDebugUtils.makeDebugContext(this.gl, throwOnGLError, logAndValidate);
         }
-        this.projectionMatrix = new Float32Array(9);
         this.setCanvasSize(width, height);
         this.lastUsedProgram = null;
-        this.mainScene = null;
-        this.frame = 0;
-        if (bgC instanceof Color) {
-            this.backgroundColor = bgC;
-        }
-        else {
-            this.backgroundColor = new Color(bgC);
-        }
-        this.clear();
+        this.renderer = new Renderer(this, fps, width, height, bgC instanceof Color ? bgC : new Color(bgC));
         this.gl.frontFace(this.gl.CW);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.defaultShapeProgram = this.newProgram();
         this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
     }
-    play() {
-        if (typeof this.mainScene == undefined) {
-            return;
-        }
-        this.clear();
-        this.mainScene.draw(this.projectionMatrix, this.frame);
-    }
     setCanvasSize(width, height) {
         this.canvas.width = width;
         this.canvas.height = height;
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-        projectionMatrix(this.projectionMatrix, width, height);
     }
     compileShader(src, type) {
         let t;
@@ -527,9 +597,20 @@ class Base {
             return -1;
         }
     }
-    clear() {
-        this.gl.clearColor(this.backgroundColor.r, this.backgroundColor.g, this.backgroundColor.b, this.backgroundColor.a);
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    get mainTimeline() {
+        return this.renderer.mainTimeline;
+    }
+    set mainTimeline(value) {
+        if (!(value instanceof Timeline)) {
+            return;
+        }
+        this.renderer.mainTimeline = value;
+    }
+    play() {
+        this.renderer.play();
+    }
+    pause() {
+        this.renderer.pause();
     }
 }
 
