@@ -6,10 +6,10 @@ function init(){
     john = new Timeline(false);
     let tl = new Timeline(true);
     tl.addLayer();
-    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: 0.75, y: 0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: 0.69999695, y: 0.69999695}}, 0, 107, 0, 0);
-    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: -0.75, y: -0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: -0.69999695, y: -0.69999695}}, 0, 107, 0, 0);
+    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: 0.75, y: 0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: 0.69999695, y: 0.69999695}}, 0, 107, 0, 70);
+    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: -0.75, y: -0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: -0.69999695, y: -0.69999695}}, 0, 107, 0, 50);
     tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: 0.75, y: -0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: 0.69999695, y: -0.69999695}}, 0, 107, 0, 0);
-    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: -0.75, y: 0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: -0.69999695, y: 0.69999695}}, 0, 107, 0, 0);
+    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: -0.75, y: 0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: -0.69999695, y: 0.69999695}}, 0, 107, 0, 20);
     tl.duration = 107;
     base.mainTimeline = tl;
     john.addLayers(7);
