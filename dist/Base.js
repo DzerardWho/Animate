@@ -485,6 +485,10 @@ class Renderer {
         this.frameUpdated = false;
         this.clear();
         this.mainTimeline.draw(this.projectionMatrix, this.frame);
+        if (!this.mainTimeline.loop && this.frame >= this.mainTimeline.duration) {
+            this.pause();
+            return;
+        }
         requestAnimationFrame(this.render);
     }
     clear() {

@@ -84,9 +84,10 @@ export class Renderer {
         this.frameUpdated = false;
         this.clear();
         this.mainTimeline.draw(this.projectionMatrix, this.frame);
-        // requestAnimationFrame(() => {
-        //     this.render();
-        // });
+        if (!this.mainTimeline.loop && this.frame >= this.mainTimeline.duration){
+            this.pause();
+            return;
+        }
         requestAnimationFrame(this.render);
     }
 

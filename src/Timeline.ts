@@ -203,10 +203,10 @@ export class TimeframeLayer {
             if (start === val.start && duration === val.duration) {
                 return false;
             }
-            if (start >= val.start && val.start <= start + duration) {
+            if (start >= val.start && val.start < start + duration) {
                 return true;
             }
-            if (val.start >= start && start <= val.start + val.duration) {
+            if (val.start >= start && start < val.start + val.duration) {
                 return true;
             }
             return false;
