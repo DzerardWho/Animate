@@ -1,4 +1,4 @@
-import { Matrix } from './Matrix'
+import { Matrix } from '../Matrix'
 import { TimeframeLayer } from './TimeframeLayer';
 import { timeElement } from './Element'
 import { _Data } from './Data'

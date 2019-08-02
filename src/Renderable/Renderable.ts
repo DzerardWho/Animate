@@ -1,4 +1,4 @@
-import { vec2, Base } from './Base'
+import { Base } from '../Base'
 
 export class Renderable {
 	attribs: Object;

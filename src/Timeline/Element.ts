@@ -1,7 +1,7 @@
 import { Linear } from './EasingFunctions'
-import { computeMatrix, Matrix } from './Matrix'
-import { Rectangle } from './Rectangle';
-import { Sprite } from './Sprite';
+import { computeMatrix, Matrix } from '../Matrix'
+import { Rectangle } from '../Renderable/Rectangle';
+import { Sprite } from '../Renderable/Sprite';
 import { Timeline } from './Timeline';
 import { Data, _Data } from './Data';
 

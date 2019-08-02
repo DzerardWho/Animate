@@ -1,4 +1,4 @@
-import { vec2 } from './Base'
+import { vec2 } from '../Base'
 
 export interface _Data {
     pos?: vec2;

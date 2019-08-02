@@ -1,7 +1,7 @@
 import { Renderable } from './Renderable'
-import { _Color } from './Color'
-import { Base } from './Base'
-import { Matrix } from './Matrix'
+import { _Color } from '../Color'
+import { Base } from '../Base'
+import { Matrix } from '../Matrix'
 
 export class Sprite extends Renderable {
 	attribs: Object;
