@@ -62,7 +62,6 @@ export class Sprite extends Renderable {
 			super(base, sprite.width, sprite.height);
 			this.textureCoords = sprite.texCoords;
 			this.texture = sprite.source.texture;
-
 		}
 
 		this.loop = true;

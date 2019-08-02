@@ -33,14 +33,22 @@ function init() {
                     y: 0
                 },
                 angle: 0
-            }, null, 0, 5, 0, 0);
-            john.addToLayer(head, {
-                pos: {
-                    x: 0,
-                    y: 0
-                },
-                angle: 0
-            }, null, 0, 5, 0, 0);
+            }, null, 0, 20, 0, 0);
+            // john.addToLayer(t2, {
+            //     pos: {
+            //         x: 300,
+            //         y: 30
+            //     },
+            //     angle: 0
+            // }, null, 0, 20, 0, 0);
+            // john.addToLayer(head, {
+            //     pos: {
+            //         x: 0,
+            //         y: 0
+            //     },
+            //     angle: 0
+            // }, null, 0, 20, 0, 0);
+
             // mainTimeline.addToLayer(john, {
             //     pos: {
             //         x: 20,

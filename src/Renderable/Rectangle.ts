@@ -44,6 +44,7 @@ export class Rectangle extends Renderable {
 			2 * Float32Array.BYTES_PER_ELEMENT,
 			0
 		);
+		this.gl.enableVertexAttribArray(this.attribs['aPosition']);
 		this.gl.uniform4fv(this.uniforms['uColor'], this.color.mixAlpha(alpha));
 		this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
 		this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);

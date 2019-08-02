@@ -435,9 +435,9 @@ class Rectangle extends Renderable {
             this.base.lastUsedProgram = this.program;
             this.gl.useProgram(this.program);
         }
-        // console.log('rectangle');
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
         this.gl.vertexAttribPointer(this.attribs['aPosition'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+        this.gl.enableVertexAttribArray(this.attribs['aPosition']);
         this.gl.uniform4fv(this.uniforms['uColor'], this.color.mixAlpha(alpha));
         this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
         this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
@@ -561,7 +561,6 @@ class Sprite extends Renderable {
             this.base.lastUsedProgram = this.program;
             this.gl.useProgram(this.program);
         }
-        console.log('sprite');
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
         this.gl.vertexAttribPointer(this.attribs["aTextureCoords"], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
         this.gl.enableVertexAttribArray(this.attribs["aTextureCoords"]);
@@ -637,7 +636,7 @@ class Renderer {
     }
     clear() {
         this.gl.clearColor(this.backgroundColor.r, this.backgroundColor.g, this.backgroundColor.b, this.backgroundColor.a);
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 }
 
