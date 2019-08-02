@@ -2,7 +2,7 @@ let base, john;
 let body, face, glasses, hat, hair_1, hair_2, hair_3;
 
 function init(){
-    base = new Base(false, 650, 450, 'canvas', 24);
+    base = new Base(false, 650, 450, 'canvas', 24, false, [118, 65, 178]);
     john = new Timeline(false);
     let tl = new Timeline(true);
     tl.addLayer();
@@ -47,7 +47,7 @@ function con(){
     john.addToLayer(body, {pos:{x: 4, y: 16}}, null, 0, 170, 0, 0);
 
     // Layer 2
-    john.addToLayer(hair_1, {pos:{x: -72, y: -84.05}}, null, 0, 47, 1, 0);
+    john.addToLayer(hair_1, {pos:{x: -72, y: -84.05}}, null, 0, 48, 1, 0);
     john.addToLayer(hair_1, {pos:{x: -72, y: -84.05}}, {pos:{x: -72, y: -84.05}, alpha: 0}, 48, 7, 1, 0);
     
     // Layer 3
