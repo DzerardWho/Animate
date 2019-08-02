@@ -11,7 +11,7 @@ function init(){
     base.mainTimeline = tl;
     john.addLayers(7);
 
-    let spritesheet = new SpritesheetLoader('/spritesheet/spritesheet.json', '/spritesheet/', () => {
+    let spritesheet = new SpritesheetLoader('../spritesheet/spritesheet.json', '../spritesheet/', () => {
         let sprites = spritesheet.generateSpritesheets(base);
         
         // body = new Sprite(base, queue.getResult('body'));
