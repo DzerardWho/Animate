@@ -1,55 +1,23 @@
 import { dvs, dfs, dsvs, dsfs } from './Programs'
-import { Color, _Color } from './Color'
-// import { projectionMatrix, Matrix } from './Matrix'
+import { Color } from './Color'
 import { Renderer } from './Renderer'
-// import { WebGLDebugUtils } from './../webgl-debug'
-import { Timeline } from './Timeline';
+import { Timeline } from './Timeline/Timeline';
+import { createDebugGl } from './DebugGl'
+import { _Color } from './types';
 
-// Rysować do canvasu tylko wtedy, gdy bedzie 'frame' się zwiększy
-export interface vec2 {
-	x: number;
-	y: number;
-}
-
-function logGLCall(functionName, args) {
-	console.log("gl." + functionName + "(" +
-		WebGLDebugUtils.glFunctionArgsToString(functionName, args) + ")");
-}
-
-function validateNoneOfTheArgsAreUndefined(functionName, args) {
-	for (var ii = 0; ii < args.length; ++ii) {
-		if (args[ii] === undefined) {
-			console.error("undefined passed to gl." + functionName + "(" +
-				WebGLDebugUtils.glFunctionArgsToString(functionName, args) + ")");
-		}
-	}
-}
-
-function logAndValidate(functionName, args) {
-	logGLCall(functionName, args);
-	validateNoneOfTheArgsAreUndefined(functionName, args);
-}
-
-function throwOnGLError(err, funcName, args) {
-	throw WebGLDebugUtils.glEnumToString(err) + " was caused by call to: " + funcName;
-};
 
 export class Base {
 	canvas: HTMLCanvasElement;
 	gl: WebGLRenderingContext;
 
-	// mainScene: Timeline;
 	renderer: Renderer;
-	// backgroundColor: Color;
 
 	defaultShapeProgram: WebGLProgram;
 	defaultSpriteProgram: WebGLProgram;
 	defaultIndicesBuffer: WebGLBuffer;
 	indices: Uint16Array;
 
-	// projectionMatrix: Matrix;
 	lastUsedProgram: WebGLProgram;
-	// frame: number;
 
 	constructor(
 		debug: boolean = false,
@@ -76,18 +44,11 @@ export class Base {
 		}
 
 		if (debug) {
-			this.gl = WebGLDebugUtils.makeDebugContext(this.gl, throwOnGLError, logAndValidate);
+			this.gl = createDebugGl(this.gl);
 		}
 
-		// this.projectionMatrix = new Float32Array(9);
 		this.setCanvasSize(width, height);
 		this.lastUsedProgram = null;
-
-		// if (bgC instanceof Color) {
-		// 	this.backgroundColor = bgC;
-		// } else {
-		// 	this.backgroundColor = new Color(bgC);
-		// }
 
 		this.renderer = new Renderer(this, fps, width, height, bgC instanceof Color ? bgC : new Color(bgC));
 
@@ -99,19 +60,10 @@ export class Base {
 		this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
 	}
 
-	// play(){
-	// 	if (typeof this.mainScene == undefined){
-	// 		return;
-	// 	}
-	// 	this.clear();
-	// 	this.mainScene.draw(this.projectionMatrix, this.frame);
-	// }
-
 	setCanvasSize(width, height) {
 		this.canvas.width = width;
 		this.canvas.height = height;
 		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-		// projectionMatrix(this.projectionMatrix, width, height);
 	}
 
 	compileShader(src: string, type: string) {
@@ -197,14 +149,4 @@ export class Base {
 	pause(){
 		this.renderer.pause();
 	}
-
-	// clear() {
-	// 	this.gl.clearColor(
-	// 		this.backgroundColor.r,
-	// 		this.backgroundColor.g,
-	// 		this.backgroundColor.b,
-	// 		this.backgroundColor.a
-	// 	);
-	// 	this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-	// }
 }

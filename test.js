@@ -72,9 +72,9 @@ function initDemo() {
         //     b.mainScene.layers[0].frames[0].elements[0].from.pos.x = Number(slider.value) * 10;
         //     b.play();
         // }
-        headimg.src = 'test/smieci/John_Egbert4.png'
+        headimg.src = 'img/other/John_Egbert4.png'
     }
-    img.src = "test/smieci/John_Egbert3.png";
+    img.src = "img/other/John_Egbert3.png";
 }
 
 function draw() {

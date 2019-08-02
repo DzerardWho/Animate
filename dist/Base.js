@@ -40,6 +40,31 @@ function createProjection(width, height) {
     ]);
 }
 
+class Timeframe {
+    constructor(start, duration) {
+        this.start = start;
+        this.duration = duration;
+        this.elements = [];
+    }
+    in(frame) {
+        return (this.start >= frame && frame <= this.start + this.duration);
+    }
+    split(splitPoint) {
+        let t = splitPoint - this.start;
+        let s = new Timeframe(splitPoint, this.duration - t);
+        this.duration = t;
+        s.addElements(this.elements);
+    }
+    addElement(element) {
+        this.elements.push(element);
+    }
+    addElements(elements) {
+        for (let i of elements) {
+            this.addElement(i);
+        }
+    }
+}
+
 function Linear(a) {
     return a;
 }
@@ -105,6 +130,7 @@ class Data {
         };
     }
 }
+
 class Element {
     constructor(obj, from, to, continueFromFrame = 0) {
         this.motion = to ? true : false;
@@ -132,30 +158,7 @@ class Element {
         this.object.draw(this.transMatrix, frame);
     }
 }
-class Timeframe {
-    constructor(start, duration) {
-        this.start = start;
-        this.duration = duration;
-        this.elements = [];
-    }
-    in(frame) {
-        return (this.start >= frame && frame <= this.start + this.duration);
-    }
-    split(splitPoint) {
-        let t = splitPoint - this.start;
-        let s = new Timeframe(splitPoint, this.duration - t);
-        this.duration = t;
-        s.addElements(this.elements);
-    }
-    addElement(element) {
-        this.elements.push(element);
-    }
-    addElements(elements) {
-        for (let i of elements) {
-            this.addElement(i);
-        }
-    }
-}
+
 class TimeframeLayer {
     constructor() {
         this.frames = [];
@@ -188,10 +191,10 @@ class TimeframeLayer {
             if (start === val.start && duration === val.duration) {
                 return false;
             }
-            if (start >= val.start && val.start <= start + duration) {
+            if (start >= val.start && val.start < start + duration) {
                 return true;
             }
-            if (val.start >= start && start <= val.start + val.duration) {
+            if (val.start >= start && start < val.start + val.duration) {
                 return true;
             }
             return false;
@@ -213,6 +216,7 @@ class TimeframeLayer {
         });
     }
 }
+
 class Timeline {
     constructor(loop = false) {
         this.loop = loop;
@@ -516,6 +520,10 @@ function logAndValidate(functionName, args) {
 function throwOnGLError(err, funcName, args) {
     throw WebGLDebugUtils.glEnumToString(err) + " was caused by call to: " + funcName;
 }
+function createDebugGl(gl) {
+    return WebGLDebugUtils.makeDebugContext(this.gl, throwOnGLError, logAndValidate);
+}
+
 class Base {
     constructor(debug = false, width, height, canvas_id, fps = 25, webgl2 = false, bgC = [-1, -1, -1, -1]) {
         this.canvas = document.getElementById(canvas_id);
@@ -529,7 +537,7 @@ class Base {
             return;
         }
         if (debug) {
-            this.gl = WebGLDebugUtils.makeDebugContext(this.gl, throwOnGLError, logAndValidate);
+            this.gl = createDebugGl(this.gl);
         }
         this.setCanvasSize(width, height);
         this.lastUsedProgram = null;
@@ -618,5 +626,5 @@ class Base {
     }
 }
 
-// export { Base, Color, Data, Element, Rectangle, Renderable, Sprite, Timeframe, TimeframeLayer, Timeline, computeMatrix, dfs, dsfs, dsvs, dvs, projectionMatrix };
+// export { Base, Color, Data, Element, Linear, Rectangle, Renderable, Sprite, Timeframe, TimeframeLayer, Timeline, computeMatrix, dfs, dsfs, dsvs, dvs, projectionMatrix };
 //# sourceMappingURL=Base.js.map

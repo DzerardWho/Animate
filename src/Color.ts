@@ -1,9 +1,4 @@
-export interface _Color {
-	[0]: number;
-	[1]: number;
-	[2]: number;
-	[3]?: number;
-}
+import { _Color } from "./types";
 
 export class Color {
 	private _r: number;

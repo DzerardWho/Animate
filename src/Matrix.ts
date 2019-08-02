@@ -1,6 +1,4 @@
-import { vec2 } from './Base'
-
-export type Matrix = Array<number> | Float32Array;
+import { vec2, Matrix } from './types'
 
 const degToRad = Math.PI / 180;
 

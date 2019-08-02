@@ -6,22 +6,18 @@ function init(){
     john = new Timeline(false);
     let tl = new Timeline(true);
     tl.addLayer();
-    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: 0.75, y: 0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: 0.69999695, y: 0.69999695}}, 0, 107, 0, 70);
-    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: -0.75, y: -0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: -0.69999695, y: -0.69999695}}, 0, 107, 0, 50);
-    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: 0.75, y: -0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: 0.69999695, y: -0.69999695}}, 0, 107, 0, 0);
-    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: -0.75, y: 0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: -0.69999695, y: 0.69999695}}, 0, 107, 0, 20);
-    tl.duration = 107;
+    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: 0.75, y: 0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: 0.69999695, y: 0.69999695}}, 0, 107, 0, 0);
     base.mainTimeline = tl;
     john.addLayers(7);
     let queue = new createjs.LoadQueue();
     queue.loadManifest([
-        {id: 'body', src: './img/41.png'},
-        {id: 'face', src: './img/45.png'},
-        {id: 'glasses', src: './img/47.png'},
-        {id: 'hat', src: './img/49.png'},
-        {id: 'hair_1', src: './img/43.png'},
-        {id: 'hair_2', src: './img/51.png'},
-        {id: 'hair_3', src: './img/53.png'}
+        {id: 'body', src: '/img/41.png'},
+        {id: 'face', src: '/img/45.png'},
+        {id: 'glasses', src: '/img/47.png'},
+        {id: 'hat', src: '/img/49.png'},
+        {id: 'hair_1', src: '/img/43.png'},
+        {id: 'hair_2', src: '/img/51.png'},
+        {id: 'hair_3', src: '/img/53.png'}
     ]);
 
     queue.on('complete', () => {

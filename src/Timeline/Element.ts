@@ -1,11 +1,7 @@
 import { Linear } from './EasingFunctions'
-import { computeMatrix, Matrix } from '../Matrix'
-import { Rectangle } from '../Renderable/Rectangle';
-import { Sprite } from '../Renderable/Sprite';
-import { Timeline } from './Timeline';
-import { Data, _Data } from './Data';
-
-export type timeElement = Timeline | Sprite | Rectangle;
+import { computeMatrix } from '../Matrix'
+import { Data } from './Data';
+import { timeElement, _Data, Matrix } from '../types';
 
 export class Element {
     object: timeElement;

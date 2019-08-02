@@ -1,12 +1,4 @@
-import { vec2 } from '../Base'
-
-export interface _Data {
-    pos?: vec2;
-    angle?: number;
-    scale?: vec2;
-    transformationPoint?: vec2;
-    alpha?: number;
-}
+import { vec2, _Data } from '../types'
 
 export class Data {
     pos: vec2;
