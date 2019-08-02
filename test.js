@@ -4,8 +4,8 @@ let body, sprite1, head;
 let slider;
 let i = 1;
 
-function initDemo() {
-    b = new Base(false, 650, 450, 'canvas', 24);
+function init() {
+    b = new Base(true, 650, 450, 'canvas', 24);
     img = new Image();
     mainTimeline = new Timeline(true);
     b.mainTimeline = mainTimeline;
@@ -26,7 +26,7 @@ function initDemo() {
                     y: 100
                 },
                 angle: 0
-            }, null, 0, 1, 0, 0);
+            }, null, 0, 20, 0, 0);
             john.addToLayer(body, {
                 pos: {
                     x: 0,
@@ -41,37 +41,22 @@ function initDemo() {
                 },
                 angle: 0
             }, null, 0, 5, 0, 0);
-            john.addToLayer(t2, {
-                pos: {
-                    x: 60,
-                    y: 30
-                },
-                angle: 0
-            }, null, 3, 8, 0, 0);
-            mainTimeline.addToLayer(john, {
-                pos: {
-                    x: 20,
-                    y: 100
-                },
-                angle: 0
-            }, {
-                pos: {
-                    x: 100,
-                    y: 200
-                },
-                angle: 0
-            }, 1, 20, 0, 0);
+            // mainTimeline.addToLayer(john, {
+            //     pos: {
+            //         x: 20,
+            //         y: 100
+            //     },
+            //     angle: 0
+            // }, {
+            //     pos: {
+            //         x: 100,
+            //         y: 200
+            //     },
+            //     angle: 0
+            // }, 0, 20, 0, 0);
+            mainTimeline.duration = 20;
             b.play();
-            // setInterval(() => {
-            //     b.frame = (b.frame + 1) % 21;
-            //     b.play();
-            // }, 1000/13);
         }
-        // slider = document.getElementById('range');
-        // slider.oninput = () => {
-        //     b.mainScene.layers[0].frames[0].elements[0].from.pos.x = Number(slider.value) * 10;
-        //     b.play();
-        // }
         headimg.src = 'img/other/John_Egbert4.png'
     }
     img.src = "img/other/John_Egbert3.png";

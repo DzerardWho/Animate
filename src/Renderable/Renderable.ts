@@ -34,4 +34,22 @@ export class Renderable {
 			this.gl.STATIC_DRAW
 		);
 	}
+
+	getProgramData(attribs: Array<string>, uniforms: Array<string>){
+		if (!this.program){
+			return;
+		}
+		for (let i of attribs){
+			this.attribs[i] = this.gl.getAttribLocation(
+				this.program,
+				i
+			);
+		}
+		for (let i of uniforms){
+			this.uniforms[i] = this.gl.getUniformLocation(
+				this.program,
+				i
+			);
+		}
+	}
 }

@@ -1,4 +1,4 @@
-import { WebGLDebugUtils } from '../libs/webgl-debug'
+// import { WebGLDebugUtils } from '../libs/webgl-debug'
 
 function logGLCall(functionName, args) {
 	console.log("gl." + functionName + "(" +
@@ -24,5 +24,5 @@ function throwOnGLError(err, funcName, args) {
 };
 
 export function createDebugGl(gl: WebGLRenderingContext){
-    return WebGLDebugUtils.makeDebugContext(this.gl, throwOnGLError, logAndValidate);
+    return WebGLDebugUtils.makeDebugContext(gl, throwOnGLError, logAndValidate);
 }

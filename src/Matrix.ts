@@ -52,3 +52,11 @@ export function createProjection(width: number, height: number): Matrix {
         1
     ]);
 }
+
+export function identity(){
+    return new Float32Array([
+        1,0,0,
+        0,1,0,
+        0,0,1
+    ])
+}

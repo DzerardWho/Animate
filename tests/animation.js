@@ -1,41 +1,40 @@
+
 let base, john;
 let body, face, glasses, hat, hair_1, hair_2, hair_3;
 
 function init(){
-    base = new Base(false, 650, 450, 'canvas', 24);
+    base = new Base(false, 650, 450, 'canvas', 24, false, [118, 65, 178]);
     john = new Timeline(false);
     let tl = new Timeline(true);
     tl.addLayer();
-    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: 0.75, y: 0.75}}, {pos: {x: 248.5, y: 28.85}, scale: {x: 0.69999695, y: 0.69999695}}, 0, 107, 0, 0);
+    tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: 0.8, y: 0.8}}, {pos: {x: 248.5, y: 28.85}, scale: {x: 0.69999695, y: 0.69999695}}, 0, 107, 0, 0);
     base.mainTimeline = tl;
     john.addLayers(7);
-    let queue = new createjs.LoadQueue();
-    queue.loadManifest([
-        {id: 'body', src: '/img/41.png'},
-        {id: 'face', src: '/img/45.png'},
-        {id: 'glasses', src: '/img/47.png'},
-        {id: 'hat', src: '/img/49.png'},
-        {id: 'hair_1', src: '/img/43.png'},
-        {id: 'hair_2', src: '/img/51.png'},
-        {id: 'hair_3', src: '/img/53.png'}
-    ]);
 
-    queue.on('complete', () => {
-        body = new Sprite(base, queue.getResult('body'));
-        face = new Sprite(base, queue.getResult('face'));
-        hair_1 = new Sprite(base, queue.getResult('hair_1'));
-        hair_2 = new Sprite(base, queue.getResult('hair_2'));
-        hair_3 = new Sprite(base, queue.getResult('hair_3'));
-
+    let spritesheet = new SpritesheetLoader('/spritesheet/spritesheet.json', '/spritesheet/', () => {
+        let sprites = spritesheet.generateSpritesheets(base);
+        
+        // body = new Sprite(base, queue.getResult('body'));
+        // face = new Sprite(base, queue.getResult('face'));
+        // hair_1 = new Sprite(base, queue.getResult('hair_1'));
+        // hair_2 = new Sprite(base, queue.getResult('hair_2'));
+        // hair_3 = new Sprite(base, queue.getResult('hair_3'));
+        body = new Sprite(base, sprites[1], '41');
+        face = new Sprite(base, sprites[1], '45');
+        hair_1 = new Sprite(base, sprites[1], '43');
+        hair_2 = new Sprite(base, sprites[1], '51');
+        hair_3 = new Sprite(base, sprites[1], '53');
+    
         hat = new Timeline(true);
         hat.addLayer();
-        hat.addToLayer(new Sprite(base, queue.getResult('hat')), {pos: {x: -135, y: -143.5}}, null, 0, 1, 0, 0);
+        hat.addToLayer(new Sprite(base, sprites[1], '49'), {pos: {x: -135, y: -143.5}}, null, 0, 1, 0, 0);
         glasses = new Timeline(true);
         glasses.addLayer();
-        glasses.addToLayer(new Sprite(base, queue.getResult('glasses')), {pos: {x: -246.5, y: -152.5}}, null, 0, 1, 0, 0);
-
+        glasses.addToLayer(new Sprite(base, sprites[1], '47'), {pos: {x: -246.5, y: -152.5}}, null, 0, 1, 0, 0);
+    
         con();
-    }, this);
+    });
+
 }
 
 function con(){
@@ -43,13 +42,13 @@ function con(){
     john.addToLayer(body, {pos:{x: 4, y: 16}}, null, 0, 170, 0, 0);
 
     // Layer 2
-    john.addToLayer(hair_1, {pos:{x: -72, y: -84.05}}, null, 0, 47, 1, 0);
+    john.addToLayer(hair_1, {pos:{x: -72, y: -84.05}}, null, 0, 48, 1, 0);
     john.addToLayer(hair_1, {pos:{x: -72, y: -84.05}}, {pos:{x: -72, y: -84.05}, alpha: 0}, 48, 7, 1, 0);
     
     // Layer 3
-    john.addToLayer(hair_2, {pos:{x: -90, y: -100.55}, alpha: 0}, {pos:{x: -90, y: -100.55}, alpha: 1}, 44, 4, 2, 0);
-    john.addToLayer(hair_2, {pos:{x: -90, y: -100.55}, alpha: 1}, null, 45, 51, 2, 0);
-    john.addToLayer(hair_2, {pos:{x: -90, y: -100.55}, alpha: 1}, {pos:{x: -90, y: -100.55}, alpha: 0}, 100, 5, 2, 0);
+    john.addToLayer(hair_2, {pos:{x: -90, y: -100.55}, alpha: 0}, {pos:{x: -90, y: -100.55}}, 44, 4, 2, 0);
+    john.addToLayer(hair_2, {pos:{x: -90, y: -100.55}}, null, 45, 51, 2, 0);
+    john.addToLayer(hair_2, {pos:{x: -90, y: -100.55}}, {pos:{x: -90, y: -100.55}, alpha: 0}, 100, 5, 2, 0);
     
     // Layer 4
     john.addToLayer(hair_3, {pos:{x: -85.15, y: -101.65}, alpha: 0}, {pos:{x: -85.15, y: -101.65}, alpha: 0}, 97, 5, 3, 0);

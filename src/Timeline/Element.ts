@@ -1,5 +1,5 @@
 import { Linear } from './EasingFunctions'
-import { computeMatrix } from '../Matrix'
+import { computeMatrix, identity } from '../Matrix'
 import { Data } from './Data';
 import { timeElement, _Data, Matrix } from '../types';
 
@@ -21,12 +21,12 @@ export class Element {
         this.from = new Data(from);
         this.object = obj;
 
-        this.transMatrix = new Float32Array(9);
+        this.transMatrix = identity();
 
         this.continueFrom = continueFromFrame || 0;
     }
 
-    draw(parentMatrix: Matrix, frame: number, duration: number) {
+    draw(parentMatrix: Matrix, alpha: number, frame: number, duration: number) {
         let progress;
         frame += this.continueFrom;
         if (frame > duration) {
@@ -38,7 +38,15 @@ export class Element {
         }
         progress = frame / duration;
         let data = this.motion ? this.from.getData(this.to, this.easing(progress)) : this.from;
+        alpha *= data.alpha;
+        // if (alpha !== 1){
+        //     console.log(alpha);
+        // }
+        if (!alpha){
+            console.log('element');
+            return;
+        }
         computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle);
-        this.object.draw(this.transMatrix, frame);
+        this.object.draw(this.transMatrix, alpha, frame);
     }
 }

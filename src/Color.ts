@@ -6,6 +6,7 @@ export class Color {
 	private _b: number;
 	private _a: number;
 	private _buffer: Float32Array;
+	private dirty: boolean;
 
 	constructor(r?: number | _Color, g?: number, b?: number, a?: number) {
 		if (typeof r == "object") {
@@ -24,6 +25,7 @@ export class Color {
 
 	set r(_c: number) {
 		this._r = this.abs_val(_c);
+		this.dirty = true;
 	}
 
 	get r() {
@@ -32,6 +34,7 @@ export class Color {
 
 	set g(_c: number) {
 		this._g = this.abs_val(_c);
+		this.dirty = true;
 	}
 
 	get g() {
@@ -40,13 +43,16 @@ export class Color {
 
 	set b(_c: number) {
 		this._b = this.abs_val(_c);
+		this.dirty = true;
 	}
 
 	get b() {
 		return this._b;
 	}
+
 	set a(_c: number) {
 		this._a = this.abs_val(_c);
+		this.dirty = true;
 	}
 
 	get a() {
@@ -73,6 +79,20 @@ export class Color {
 	}
 
 	get buffer() {
+		if (this.dirty) {
+			this._buffer[0] = this._r;
+			this._buffer[1] = this._g;
+			this._buffer[2] = this._b;
+			this._buffer[3] = this._a;
+			this.dirty = false;
+		}
+		return this._buffer;
+	}
+
+	mixAlpha(alpha: number) {
+		// this._buffer[3] = this._a * alpha;
+		this.buffer[3] *= alpha;
+		this.dirty = true;
 		return this._buffer;
 	}
 }

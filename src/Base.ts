@@ -54,7 +54,8 @@ export class Base {
 
 		this.gl.frontFace(this.gl.CW);
 		this.gl.enable(this.gl.BLEND);
-		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+		this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
+		this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
 		this.defaultShapeProgram = this.newProgram();
 		this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);

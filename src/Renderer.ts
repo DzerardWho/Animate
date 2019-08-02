@@ -1,7 +1,8 @@
-import { Timeline } from './Timeline'
-import { Matrix, createProjection } from './Matrix'
+import { Timeline } from './Timeline/Timeline'
+import { createProjection } from './Matrix'
 import { Base } from './Base'
 import { Color } from './Color'
+import { Matrix } from './types';
 
 export class Renderer {
     gl: WebGLRenderingContext;
@@ -45,14 +46,6 @@ export class Renderer {
         }
     }
 
-    // private __play(){
-    //     if (!this.isPlaying){
-    //         // this.isPlaying = true;
-    //         this.updateInterval = setInterval(this.update, this.timing);
-    //         this.render();
-    //     }    
-    // }
-
     pause() {
         if (this.isPlaying) {
             clearInterval(this.updateInterval);
@@ -66,9 +59,6 @@ export class Renderer {
             ++this.frame;
             this.frameUpdated = true;
             requestAnimationFrame(this.render);
-            // requestAnimationFrame(() => {
-            //     this.render();
-            // });
             this.lastUpdate = performance.now();
             this.timeToNextUpdate = this.timing;
         }
@@ -83,12 +73,12 @@ export class Renderer {
         }
         this.frameUpdated = false;
         this.clear();
-        this.mainTimeline.draw(this.projectionMatrix, this.frame);
-        if (!this.mainTimeline.loop && this.frame >= this.mainTimeline.duration){
+        this.mainTimeline.draw(this.projectionMatrix, 1, this.frame);
+        if (!this.mainTimeline.loop && this.frame >= this.mainTimeline.duration - 1){
             this.pause();
             return;
         }
-        requestAnimationFrame(this.render);
+        // requestAnimationFrame(this.render);
     }
 
     clear() {
@@ -98,6 +88,6 @@ export class Renderer {
             this.backgroundColor.b,
             this.backgroundColor.a
         );
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     }
 }

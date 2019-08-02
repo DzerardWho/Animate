@@ -22,7 +22,7 @@ export class Data {
             }
         }
 
-        this.angle = data.angle || 0;
+        this.angle = typeof data.angle === 'undefined' ? 0 : data.angle;
         this.scale = { x: 1, y: 1 };
         this.transformationPoint = { x: 0, y: 0 };
         if (data.scale) {
@@ -41,7 +41,7 @@ export class Data {
                 this.transformationPoint.y = data.transformationPoint.y;
             }
         }
-        this.alpha = 1;
+        this.alpha = typeof data.alpha === 'undefined' ? 1 : data.alpha;
     }
 
     getData(to: Data, progress: number) {

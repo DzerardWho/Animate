@@ -39,6 +39,13 @@ function createProjection(width, height) {
         1
     ]);
 }
+function identity() {
+    return new Float32Array([
+        1, 0, 0,
+        0, 1, 0,
+        0, 0, 1
+    ]);
+}
 
 class Timeframe {
     constructor(start, duration) {
@@ -83,7 +90,7 @@ class Data {
                 this.pos.y = data.pos.y;
             }
         }
-        this.angle = data.angle || 0;
+        this.angle = typeof data.angle === 'undefined' ? 0 : data.angle;
         this.scale = { x: 1, y: 1 };
         this.transformationPoint = { x: 0, y: 0 };
         if (data.scale) {
@@ -102,7 +109,7 @@ class Data {
                 this.transformationPoint.y = data.transformationPoint.y;
             }
         }
-        this.alpha = 1;
+        this.alpha = typeof data.alpha === 'undefined' ? 1 : data.alpha;
     }
     getData(to, progress) {
         let alpha = this.alpha + (to.alpha - this.alpha) * progress;
@@ -138,10 +145,10 @@ class Element {
         this.to = this.motion ? new Data(to) : null;
         this.from = new Data(from);
         this.object = obj;
-        this.transMatrix = new Float32Array(9);
+        this.transMatrix = identity();
         this.continueFrom = continueFromFrame || 0;
     }
-    draw(parentMatrix, frame, duration) {
+    draw(parentMatrix, alpha, frame, duration) {
         let progress;
         frame += this.continueFrom;
         if (frame > duration) {
@@ -154,8 +161,13 @@ class Element {
         }
         progress = frame / duration;
         let data = this.motion ? this.from.getData(this.to, this.easing(progress)) : this.from;
+        alpha *= data.alpha;
+        if (!alpha) {
+            console.log('element');
+            return;
+        }
         computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle);
-        this.object.draw(this.transMatrix, frame);
+        this.object.draw(this.transMatrix, alpha, frame);
     }
 }
 
@@ -238,21 +250,26 @@ class Timeline {
         this.duration += this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);
         return this;
     }
-    draw(matrix, frame) {
-        let timeFrame, _frame;
-        this.layers.forEach((layer) => {
-            if (this.loop) {
-                frame %= this.duration;
-            }
-            timeFrame = layer.findByFrame(frame);
-            if (!timeFrame) {
-                return;
-            }
-            _frame = frame - timeFrame.start;
-            timeFrame.elements.forEach((element) => {
-                element.draw(matrix, _frame, timeFrame.duration);
+    draw(matrix, alpha = 1, frame) {
+        if (alpha) {
+            let timeFrame, _frame;
+            this.layers.forEach((layer) => {
+                if (this.loop) {
+                    frame %= this.duration;
+                }
+                timeFrame = layer.findByFrame(frame);
+                if (!timeFrame) {
+                    return;
+                }
+                _frame = frame - timeFrame.start;
+                timeFrame.elements.forEach((element) => {
+                    element.draw(matrix, alpha, _frame, timeFrame.duration);
+                });
             });
-        });
+        }
+        else {
+            console.log('timeline');
+        }
     }
 }
 
@@ -282,16 +299,18 @@ uniform mat3 transMatrix;
 varying vec2 f_texCoord;
 
 void main(){
-	f_texCoord = aTextureCoords;
+    f_texCoord = aTextureCoords;
     gl_Position = vec4((transMatrix * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
 }`;
 const dsfs = `precision mediump float;
 
 varying vec2 f_texCoord;
+uniform float alpha;
 uniform sampler2D sampler;
 
 void main(){
-	gl_FragColor = texture2D(sampler, f_texCoord);
+    vec4 color = texture2D(sampler, f_texCoord);
+	gl_FragColor = vec4(color.rgb, color.a * alpha);
 }`;
 
 class Renderable {
@@ -308,6 +327,17 @@ class Renderable {
             w, 0,
             w, h
         ]), this.gl.STATIC_DRAW);
+    }
+    getProgramData(attribs, uniforms) {
+        if (!this.program) {
+            return;
+        }
+        for (let i of attribs) {
+            this.attribs[i] = this.gl.getAttribLocation(this.program, i);
+        }
+        for (let i of uniforms) {
+            this.uniforms[i] = this.gl.getUniformLocation(this.program, i);
+        }
     }
 }
 
@@ -329,24 +359,28 @@ class Color {
     }
     set r(_c) {
         this._r = this.abs_val(_c);
+        this.dirty = true;
     }
     get r() {
         return this._r;
     }
     set g(_c) {
         this._g = this.abs_val(_c);
+        this.dirty = true;
     }
     get g() {
         return this._g;
     }
     set b(_c) {
         this._b = this.abs_val(_c);
+        this.dirty = true;
     }
     get b() {
         return this._b;
     }
     set a(_c) {
         this._a = this.abs_val(_c);
+        this.dirty = true;
     }
     get a() {
         return this._a;
@@ -367,6 +401,18 @@ class Color {
         return [this._r, this._g, this._b, this._a];
     }
     get buffer() {
+        if (this.dirty) {
+            this._buffer[0] = this._r;
+            this._buffer[1] = this._g;
+            this._buffer[2] = this._b;
+            this._buffer[3] = this._a;
+            this.dirty = false;
+        }
+        return this._buffer;
+    }
+    mixAlpha(alpha) {
+        this.buffer[3] *= alpha;
+        this.dirty = true;
         return this._buffer;
     }
 }
@@ -377,29 +423,69 @@ class Rectangle extends Renderable {
         this.loop = true;
         this.program = base.defaultShapeProgram;
         this.color = new Color(c);
-        this.attribs["position"] = this.gl.getAttribLocation(this.program, "aPosition");
-        this.gl.enableVertexAttribArray(this.attribs["position"]);
-        this.uniforms["uColor"] = this.gl.getUniformLocation(this.program, "uColor");
-        this.uniforms["transMatrix"] = this.gl.getUniformLocation(this.program, "transMatrix");
+        this.getProgramData([
+            'aPosition'
+        ], [
+            'uColor',
+            'transMatrix',
+        ]);
     }
-    draw(matrix, frame) {
+    draw(matrix, alpha) {
         if (this.base.lastUsedProgram !== this.program) {
             this.base.lastUsedProgram = this.program;
             this.gl.useProgram(this.program);
         }
+        // console.log('rectangle');
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
-        this.gl.vertexAttribPointer(this.attribs['position'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-        this.gl.uniform4fv(this.uniforms['uColor'], this.color.buffer);
+        this.gl.vertexAttribPointer(this.attribs['aPosition'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+        this.gl.uniform4fv(this.uniforms['uColor'], this.color.mixAlpha(alpha));
         this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
         this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
     }
 }
 
-class Sprite extends Renderable {
-    constructor(base, img) {
-        super(base, img.width, img.height);
-        this.loop = true;
-        this.program = base.defaultSpriteProgram;
+class SpritesheetLoader {
+    constructor(manifestPath, fileLocation = '/', callback) {
+        this.loadComplete = false;
+        this.files = {};
+        this.manifestLoader = new createjs.JSONLoader(createjs.LoadItem.create(manifestPath));
+        this.manifestLoader.on('complete', () => {
+            let fileLoader = new createjs.LoadQueue(true, fileLocation);
+            this.manifest = this.manifestLoader.getResult();
+            for (let i in this.manifest) {
+                fileLoader.loadFile({
+                    'id': i,
+                    'src': i
+                });
+            }
+            fileLoader.on('complete', () => {
+                for (let i of fileLoader.getItems(false)) {
+                    this.files[i.item.id] = i.result;
+                }
+                this.loadComplete = true;
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            });
+            fileLoader.load();
+        });
+        this.manifestLoader.load();
+    }
+    generateSpritesheets(base) {
+        if (!this.loadComplete) {
+            return;
+        }
+        let t = {};
+        for (let i in this.files) {
+            t[i.replace('.png', '')] = new Spritesheet(base, this.manifest[i], this.files[i]);
+        }
+        return t;
+    }
+}
+class Spritesheet {
+    constructor(base, data, img) {
+        this.gl = base.gl;
+        this.sprites = [];
         this.texture = this.gl.createTexture();
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
@@ -407,31 +493,86 @@ class Sprite extends Renderable {
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
         this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
-        this.textureCoords = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 1, 1, 0, 1, 1]), this.gl.STATIC_DRAW);
-        this.attribs["position"] = this.gl.getAttribLocation(this.program, "aPosition");
-        this.attribs["textureCoords"] = this.gl.getAttribLocation(this.program, "aTextureCoords");
-        this.uniforms["uColor"] = this.gl.getUniformLocation(this.program, "uColor");
-        this.uniforms["transMatrix"] = this.gl.getUniformLocation(this.program, "transMatrix");
-        this.uniforms["mProj"] = this.gl.getUniformLocation(this.program, "mProj");
-        this.uniforms["sampler"] = this.gl.getUniformLocation(this.program, "sampler");
+        let tmp, x, y, w, h;
+        for (let i in data) {
+            x = data[i].x / img.width;
+            w = (data[i].x + data[i].width) / img.width;
+            y = data[i].y / img.height;
+            h = (data[i].y + data[i].height) / img.height;
+            tmp = this.gl.createBuffer();
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tmp);
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
+                x, y,
+                x, h,
+                w, y,
+                w, h
+            ]), this.gl.STATIC_DRAW);
+            this.sprites[i] = {
+                texCoords: tmp,
+                source: this,
+                width: data[i].width,
+                height: data[i].height
+            };
+        }
+        tmp = null;
     }
-    draw(matrix) {
+    get(index) {
+        return this.sprites[index];
+    }
+}
+
+class Sprite extends Renderable {
+    constructor(base, img, index) {
+        if (!(img instanceof Spritesheet)) {
+            super(base, img.width, img.height);
+            this.texture = this.gl.createTexture();
+            this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
+            this.textureCoords = this.gl.createBuffer();
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 1, 1, 0, 1, 1]), this.gl.STATIC_DRAW);
+        }
+        else {
+            if (!index) {
+                throw 'Index is required';
+            }
+            let sprite = img.get(index);
+            super(base, sprite.width, sprite.height);
+            this.textureCoords = sprite.texCoords;
+            this.texture = sprite.source.texture;
+        }
+        this.loop = true;
+        this.program = base.defaultSpriteProgram;
+        this.getProgramData([
+            'aPosition',
+            'aTextureCoords'
+        ], [
+            'transMatrix',
+            'sampler',
+            'alpha'
+        ]);
+    }
+    draw(matrix, alpha) {
         if (this.base.lastUsedProgram !== this.program) {
             this.base.lastUsedProgram = this.program;
             this.gl.useProgram(this.program);
         }
+        console.log('sprite');
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
-        this.gl.vertexAttribPointer(this.attribs["textureCoords"], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-        this.gl.enableVertexAttribArray(this.attribs["textureCoords"]);
+        this.gl.vertexAttribPointer(this.attribs["aTextureCoords"], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+        this.gl.enableVertexAttribArray(this.attribs["aTextureCoords"]);
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
-        this.gl.vertexAttribPointer(this.attribs['position'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+        this.gl.vertexAttribPointer(this.attribs['aPosition'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+        this.gl.enableVertexAttribArray(this.attribs['aPosition']);
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
         this.gl.uniform1i(this.uniforms['sampler'], 0);
-        this.gl.enableVertexAttribArray(this.attribs['position']);
         this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
+        this.gl.uniform1f(this.uniforms['alpha'], alpha);
         this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
     }
 }
@@ -488,16 +629,15 @@ class Renderer {
         }
         this.frameUpdated = false;
         this.clear();
-        this.mainTimeline.draw(this.projectionMatrix, this.frame);
-        if (!this.mainTimeline.loop && this.frame >= this.mainTimeline.duration) {
+        this.mainTimeline.draw(this.projectionMatrix, 1, this.frame);
+        if (!this.mainTimeline.loop && this.frame >= this.mainTimeline.duration - 1) {
             this.pause();
             return;
         }
-        requestAnimationFrame(this.render);
     }
     clear() {
         this.gl.clearColor(this.backgroundColor.r, this.backgroundColor.g, this.backgroundColor.b, this.backgroundColor.a);
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     }
 }
 
@@ -521,7 +661,7 @@ function throwOnGLError(err, funcName, args) {
     throw WebGLDebugUtils.glEnumToString(err) + " was caused by call to: " + funcName;
 }
 function createDebugGl(gl) {
-    return WebGLDebugUtils.makeDebugContext(this.gl, throwOnGLError, logAndValidate);
+    return WebGLDebugUtils.makeDebugContext(gl, throwOnGLError, logAndValidate);
 }
 
 class Base {
@@ -544,7 +684,8 @@ class Base {
         this.renderer = new Renderer(this, fps, width, height, bgC instanceof Color ? bgC : new Color(bgC));
         this.gl.frontFace(this.gl.CW);
         this.gl.enable(this.gl.BLEND);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+        this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
+        this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
         this.defaultShapeProgram = this.newProgram();
         this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
     }
@@ -626,5 +767,5 @@ class Base {
     }
 }
 
-// export { Base, Color, Data, Element, Linear, Rectangle, Renderable, Sprite, Timeframe, TimeframeLayer, Timeline, computeMatrix, dfs, dsfs, dsvs, dvs, projectionMatrix };
+// export { Base, Color, Data, Element, Linear, Rectangle, Renderable, Sprite, Spritesheet, SpritesheetLoader, Timeframe, TimeframeLayer, Timeline, computeMatrix, dfs, dsfs, dsvs, dvs, projectionMatrix };
 //# sourceMappingURL=Base.js.map

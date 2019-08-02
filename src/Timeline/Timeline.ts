@@ -1,7 +1,5 @@
-import { Matrix } from '../Matrix'
+import { Matrix, timeElement, _Data } from '../types'
 import { TimeframeLayer } from './TimeframeLayer';
-import { timeElement } from './Element'
-import { _Data } from './Data'
 import { Timeframe } from './Timeframe';
 
 export class Timeline {
@@ -34,24 +32,24 @@ export class Timeline {
         return this;
     }
 
-    draw(matrix: Matrix, frame: number) {
-        let timeFrame: Timeframe | null, _frame;
-        this.layers.forEach((layer) => {
-            if (this.loop) {
-                frame %= this.duration;
-            }
-            timeFrame = layer.findByFrame(frame);
-            if (!timeFrame) {
-                return;
-            }
-            _frame = frame - timeFrame.start;
-            // if (this.loop){
-            //     _frame %= this.duration;
-            // }
-            // console.log(this, _frame);
-            timeFrame.elements.forEach((element) => {
-                element.draw(matrix, _frame, timeFrame.duration);
+    draw(matrix: Matrix, alpha: number = 1, frame: number) {
+        if (alpha) {
+            let timeFrame: Timeframe | null, _frame;
+            this.layers.forEach((layer) => {
+                if (this.loop) {
+                    frame %= this.duration;
+                }
+                timeFrame = layer.findByFrame(frame);
+                if (!timeFrame) {
+                    return;
+                }
+                _frame = frame - timeFrame.start;
+                timeFrame.elements.forEach((element) => {
+                    element.draw(matrix, alpha, _frame, timeFrame.duration);
+                });
             });
-        });
+        }else{
+            console.log('timeline');
+        }
     }
 }
