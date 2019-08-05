@@ -5,7 +5,6 @@ import { Matrix, _Color } from '../types'
 
 export class Rectangle extends Renderable {
 	color: Color;
-	loop: boolean;
 
 	constructor(
 		base: Base,
@@ -14,11 +13,11 @@ export class Rectangle extends Renderable {
 		c: _Color = [1, 1, 1, 1]
 	) {
 		super(base, w, h);
-		this.loop = true;
 		this.program = base.defaultShapeProgram;
-
+		
 		this.color = new Color(c);
-
+		this.hasTransparency = false;
+		
 		this.getProgramData([
 			// Atribs
 			'aPosition'
@@ -32,7 +31,6 @@ export class Rectangle extends Renderable {
 	draw(matrix: Matrix, alpha: number) {
 		if (this.base.lastUsedProgram !== this.program) {
 			this.base.lastUsedProgram = this.program;
-			this.gl.useProgram(this.program);
 		}
 
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);

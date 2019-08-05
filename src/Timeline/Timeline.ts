@@ -1,4 +1,4 @@
-import { Matrix, timeElement, _Data } from '../types'
+import { Matrix, timeElement, _Data, vec2 } from '../types'
 import { TimeframeLayer } from './TimeframeLayer';
 import { Timeframe } from './Timeframe';
 
@@ -6,21 +6,25 @@ export class Timeline {
     loop: boolean;
     layers: Array<TimeframeLayer>;
     duration: number;
+    padding: vec2;
 
-    constructor(loop: boolean = false) {
+    constructor(loop: boolean = false, initLayers: number) {
         this.loop = loop;
         this.layers = [];
         this.duration = 0;
+        this.addLayers(initLayers);
     }
 
     addLayer() {
         this.layers.push(new TimeframeLayer);
+        return this;
     }
 
     addLayers(count: number) {
         for (let i = 0; i < count; ++i) {
             this.addLayer();
         }
+        return this;
     }
 
     addToLayer(obj: timeElement, from: _Data, to: _Data, start: number, duration: number, layer: number, continueFrom: number = 0) {
@@ -48,8 +52,6 @@ export class Timeline {
                     element.draw(matrix, alpha, _frame, timeFrame.duration);
                 });
             });
-        }else{
-            console.log('timeline');
         }
     }
 }

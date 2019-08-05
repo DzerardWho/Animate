@@ -1,6 +1,6 @@
 import { Timeframe } from './Timeframe'
-import { Element, timeElement } from './Element'
-import { _Data } from './Data'
+import { Element } from './Element'
+import { _Data, timeElement } from '../types'
 
 export class TimeframeLayer {
     frames: Array<Timeframe>;

@@ -10,10 +10,10 @@ export class Color {
 
 	constructor(r?: number | _Color, g?: number, b?: number, a?: number) {
 		if (typeof r == "object") {
-			this._r = r[0] ? this.abs_val(r[0]) : 1;
-			this._g = r[1] ? this.abs_val(r[1]) : 1;
-			this._b = r[2] ? this.abs_val(r[2]) : 1;
-			this._a = r[3] ? this.abs_val(r[3]) : 1;
+			this._r = typeof r[0] === 'number' ? this.abs_val(r[0]) : 1;
+			this._g = typeof r[1] === 'number' ? this.abs_val(r[1]) : 1;
+			this._b = typeof r[2] === 'number' ? this.abs_val(r[2]) : 1;
+			this._a = typeof r[3] === 'number' ? this.abs_val(r[3]) : 1;
 		} else {
 			this._r = r ? this.abs_val(r) : 1;
 			this._g = g ? this.abs_val(g) : 1;
@@ -60,7 +60,7 @@ export class Color {
 	}
 
 	private abs_val(v: number) {
-		return v < 0 ? (v >= -1 ? -v : 0) : v > 255 ? (v % 255) / 255 : v / 255;
+		return v <= 0 ? (v >= -1 ? -v : 0) : v > 255 ? (v % 255) / 255 : v / 255;
 	}
 
 	get color() {

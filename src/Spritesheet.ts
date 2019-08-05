@@ -5,6 +5,9 @@ interface DataElements {
     y: number;
     width: number;
     height: number;
+    pad_x: number;
+    pad_y: number;
+    transparent: boolean;
 }
 
 interface Data {
@@ -16,6 +19,9 @@ interface _Sprite {
     source: Spritesheet;
     width: number;
     height: number;
+    pad_x: number;
+    pad_y: number;
+    transparent: boolean;
 }
 
 export class SpritesheetLoader {
@@ -134,7 +140,10 @@ export class Spritesheet {
                 texCoords: tmp,
                 source: this,
                 width: data[i].width,
-                height: data[i].height
+                height: data[i].height,
+                pad_x: data[i].pad_x || 0,
+                pad_y: data[i].pad_y || 0,
+                transparent: data[i].transparent
             };
         }
         tmp = null;

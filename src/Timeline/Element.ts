@@ -39,14 +39,10 @@ export class Element {
         progress = frame / duration;
         let data = this.motion ? this.from.getData(this.to, this.easing(progress)) : this.from;
         alpha *= data.alpha;
-        // if (alpha !== 1){
-        //     console.log(alpha);
-        // }
         if (!alpha){
-            console.log('element');
             return;
         }
-        computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle);
+        computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle, this.object.padding);
         this.object.draw(this.transMatrix, alpha, frame);
     }
 }

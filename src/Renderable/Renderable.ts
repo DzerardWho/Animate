@@ -1,4 +1,5 @@
 import { Base } from '../Base'
+import { vec2 } from '../types';
 
 export class Renderable {
 	attribs: Object;
@@ -8,6 +9,10 @@ export class Renderable {
 	program: WebGLProgram;
 	gl: WebGLRenderingContext;
 	base: Base;
+	hasTransparency: boolean;
+	loop: boolean;
+	
+	padding: vec2;
 
 	constructor(
 		base: Base,
@@ -16,6 +21,7 @@ export class Renderable {
 	) {
 		this.base = base;
 		this.gl = base.gl;
+		this.loop = true;
 
 		this.shapeBuffer = this.gl.createBuffer();
 		this.attribs = {};

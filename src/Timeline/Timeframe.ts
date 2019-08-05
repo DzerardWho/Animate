@@ -15,12 +15,12 @@ export class Timeframe {
         return (this.start >= frame && frame <= this.start + this.duration);
     }
 
-    split(splitPoint: number) {
-        let t = splitPoint - this.start;
-        let s = new Timeframe(splitPoint, this.duration - t);
-        this.duration = t;
-        s.addElements(this.elements);
-    }
+    // split(splitPoint: number) {
+    //     let t = splitPoint - this.start;
+    //     let s = new Timeframe(splitPoint, this.duration - t);
+    //     this.duration = t;
+    //     s.addElements(this.elements);
+    // }
 
     addElement(element: Element) {
         this.elements.push(element);

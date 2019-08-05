@@ -57,6 +57,7 @@ export class Renderer {
     update() {
         if (this.isPlaying) {
             ++this.frame;
+            // console.log('update');
             this.frameUpdated = true;
             requestAnimationFrame(this.render);
             this.lastUpdate = performance.now();
@@ -71,6 +72,7 @@ export class Renderer {
         if (!(this.frameUpdated && this.isPlaying)) {
             return;
         }
+        // console.log('render');
         this.frameUpdated = false;
         this.clear();
         this.mainTimeline.draw(this.projectionMatrix, 1, this.frame);
@@ -78,7 +80,6 @@ export class Renderer {
             this.pause();
             return;
         }
-        // requestAnimationFrame(this.render);
     }
 
     clear() {
@@ -89,5 +90,9 @@ export class Renderer {
             this.backgroundColor.a
         );
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
+
+    changeBlendFunc(func: number) {
+        this.gl.blendFunc(func, this.gl.ONE_MINUS_SRC_ALPHA);
     }
 }

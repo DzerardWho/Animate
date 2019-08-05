@@ -2,46 +2,44 @@ import { vec2, _Data } from '../types'
 
 export class Data {
     pos: vec2;
-    angle: number;
+    angle: number = 0;
     scale: vec2;
     transformationPoint: vec2;
-    alpha: number;
-    dirty: boolean;
+    alpha: number = 1;
 
     constructor(data: _Data | null) {
-        if (!data) {
-            return this;
-        }
         this.pos = { x: 0, y: 0 };
-        if (data.pos) {
-            if (data.pos.x) {
-                this.pos.x = data.pos.x;
-            }
-            if (data.pos.y) {
-                this.pos.y = data.pos.y;
-            }
-        }
-
-        this.angle = typeof data.angle === 'undefined' ? 0 : data.angle;
         this.scale = { x: 1, y: 1 };
         this.transformationPoint = { x: 0, y: 0 };
-        if (data.scale) {
-            if (data.scale.x) {
-                this.scale.x = data.scale.x;
+
+        if (data) {
+            if (data.pos){
+                if (data.pos.x) {
+                    this.pos.x = data.pos.x;
+                }
+                if (data.pos.y) {
+                    this.pos.y = data.pos.y;
+                }
             }
-            if (data.scale.y) {
-                this.scale.y = data.scale.y;
+            this.angle = typeof data.angle === 'undefined' ? 0 : data.angle;
+            if (data.scale) {
+                if (data.scale.x) {
+                    this.scale.x = data.scale.x;
+                }
+                if (data.scale.y) {
+                    this.scale.y = data.scale.y;
+                }
             }
+            if (data.transformationPoint) {
+                if (data.transformationPoint.x) {
+                    this.transformationPoint.x = data.transformationPoint.x;
+                }
+                if (data.scale.y) {
+                    this.transformationPoint.y = data.transformationPoint.y;
+                }
+            }
+            this.alpha = typeof data.alpha === 'undefined' ? 1 : data.alpha;
         }
-        if (data.transformationPoint) {
-            if (data.transformationPoint.x) {
-                this.transformationPoint.x = data.transformationPoint.x;
-            }
-            if (data.scale.y) {
-                this.transformationPoint.y = data.transformationPoint.y;
-            }
-        }
-        this.alpha = typeof data.alpha === 'undefined' ? 1 : data.alpha;
     }
 
     getData(to: Data, progress: number) {

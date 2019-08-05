@@ -10,8 +10,9 @@ export class Sprite extends Renderable {
 	texture: WebGLTexture;
 	textureCoords: WebGLBuffer;
 	loop: boolean;
+	blendFunc: number;
 
-	constructor(base: Base, img: ImageData | Spritesheet, index?: string) {
+	constructor(base: Base, img: ImageData | Spritesheet, transparent: boolean, index?: string) {
 		if (!(img instanceof Spritesheet)) {
 			super(base, img.width, img.height);
 
@@ -62,10 +63,16 @@ export class Sprite extends Renderable {
 			super(base, sprite.width, sprite.height);
 			this.textureCoords = sprite.texCoords;
 			this.texture = sprite.source.texture;
+			this.padding = {x: sprite.pad_x, y: sprite.pad_y};
 		}
 
 		this.loop = true;
 		this.program = base.defaultSpriteProgram;
+		if (transparent) {
+			this.blendFunc = this.gl.ONE;
+		} else {
+			this.blendFunc = this.gl.SRC_ALPHA;
+		}
 
 		this.getProgramData([
 			// Atribs
@@ -83,7 +90,14 @@ export class Sprite extends Renderable {
 	draw(matrix: Matrix, alpha: number) {
 		if (this.base.lastUsedProgram !== this.program) {
 			this.base.lastUsedProgram = this.program;
-			this.gl.useProgram(this.program);
+		}
+
+		if (this.base.lastUsedBlendFunc !== this.blendFunc){
+			this.base.lastUsedBlendFunc = this.blendFunc;
+		}
+
+		if (this.base.lastUsedTexture !== this.texture){
+			this.base.lastUsedTexture = this.texture;
 		}
 
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
@@ -107,13 +121,8 @@ export class Sprite extends Renderable {
 			0
         );
         this.gl.enableVertexAttribArray(this.attribs['aPosition']);
-            
-		this.gl.activeTexture(this.gl.TEXTURE0);
-        this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
         this.gl.uniform1i(this.uniforms['sampler'], 0);
-
 		this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
-		
 		this.gl.uniform1f(this.uniforms['alpha'], alpha);
         
 		this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
