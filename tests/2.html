@@ -1,38 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <title>Document</title>
-    <script src="../libs/gl-matrix.js"></script>
     <script src="../libs/stats.min.js"></script>
     <script src="../libs/webgl-debug.js"></script>
     <script src="../libs/preloadjs.js"></script>
     <script src="../dist/Base.js"></script>
     <script src="./animation_1.js"></script>
 </head>
+
 <body>
     <script>
-var stats = new Stats();
-stats.showPanel(2); // 0: fps, 1: ms, 2: mb, 3+: custom
-document.body.appendChild( stats.dom );
-
-function animate() {
-
-	stats.begin();
-
-	// monitored code goes here
-
-	stats.end();
-
-	requestAnimationFrame( animate );
-
-}
-
-requestAnimationFrame( animate );    
+        var stats = new Stats();
+        stats.showPanel(2); // 0: fps, 1: ms, 2: mb, 3+: custom
+        document.body.appendChild(stats.dom);
+        function animate() {
+            stats.begin();
+            // monitored code goes here
+            stats.end();
+            requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
     </script>
     <div id="canvas">
     </div>
     <br>
     <i>Demo is above</i>
-    <script>init();</script>
+    <script>
+        init();
+    </script>
 </body>
+
 </html>
