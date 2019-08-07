@@ -42,7 +42,7 @@ export class Element {
         if (!alpha){
             return;
         }
-        computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle, this.object.padding);
+        computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, this.object.width || 1, this.object.height || 1, data.transformationPoint, data.angle, this.object.padding);
         this.object.draw(this.transMatrix, alpha, frame);
     }
 }

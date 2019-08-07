@@ -33,6 +33,7 @@ export class Renderer {
         this.backgroundColor = bgColor;
         this.render = this.render.bind(this);
         this.update = this.update.bind(this);
+        this.changeBlendFunc(this.gl.ONE);
     }
 
     play() {

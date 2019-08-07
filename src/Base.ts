@@ -8,14 +8,14 @@ import { _Color } from './types';
 
 export class Base {
 	canvas: HTMLCanvasElement;
+	textCanvas: HTMLCanvasElement;
 	gl: WebGLRenderingContext;
 
 	renderer: Renderer;
 
 	defaultShapeProgram: WebGLProgram;
 	defaultSpriteProgram: WebGLProgram;
-	defaultIndicesBuffer: WebGLBuffer;
-	indices: Uint16Array;
+	unitBuffer: WebGLBuffer;
 
 	_lastUsedProgram: WebGLProgram;
 	_lastUsedTexture: WebGLTexture;
@@ -33,11 +33,14 @@ export class Base {
 		this.canvas = <HTMLCanvasElement>document.getElementById(canvas_id);
 		if (this.canvas.nodeName != "CANVAS") {
 			this.canvas = document.createElement("canvas");
+			this.textCanvas = document.createElement('canvas');
+			this.textCanvas.style.display = 'none';
 			document.getElementById(canvas_id).appendChild(this.canvas);
+			document.getElementById(canvas_id).appendChild(this.textCanvas);
 		}
 
 		this.gl = <WebGLRenderingContext>(
-			this.canvas.getContext(webgl2 ? "webgl2" : "webgl", {alpha: false, depth: false})
+			this.canvas.getContext(webgl2 ? "webgl2" : "webgl", { alpha: false, depth: false })
 		);
 
 		if (!this.gl) {
@@ -60,6 +63,15 @@ export class Base {
 
 		this.defaultShapeProgram = this.newProgram();
 		this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
+		this.unitBuffer = this.gl.createBuffer();
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
+		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
+			0, 0,
+			0, 1,
+			1, 0,
+			1, 1
+		]),
+		this.gl.STATIC_DRAW)
 	}
 
 	setCanvasSize(width, height) {
@@ -133,22 +145,22 @@ export class Base {
 		}
 	}
 
-	get mainTimeline(){
+	get mainTimeline() {
 		return this.renderer.mainTimeline;
 	}
 
-	set mainTimeline(value: Timeline){
-		if (!(value instanceof Timeline)){
+	set mainTimeline(value: Timeline) {
+		if (!(value instanceof Timeline)) {
 			return;
 		}
 		this.renderer.mainTimeline = value;
 	}
 
-	play(){
+	play() {
 		this.renderer.play();
 	}
 
-	pause(){
+	pause() {
 		this.renderer.pause();
 	}
 

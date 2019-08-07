@@ -7,6 +7,8 @@ export class Timeline {
     layers: Array<TimeframeLayer>;
     duration: number;
     padding: vec2;
+    width: number;
+    height: number;
 
     constructor(loop: boolean = false, initLayers: number) {
         this.loop = loop;

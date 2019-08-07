@@ -1,5 +1,5 @@
 const degToRad = Math.PI / 180;
-function computeMatrix(_in, out, pos, scale, trans, angle, padding) {
+function computeMatrix(_in, out, pos, scale, width, height, trans, angle, padding) {
     let [a, b, , d, e, , g, h] = _in;
     let x = pos.x, y = pos.y, px = trans.x, py = trans.y, sx = scale.x, sy = scale.y;
     angle *= degToRad;
@@ -9,12 +9,18 @@ function computeMatrix(_in, out, pos, scale, trans, angle, padding) {
         pax = padding.x;
         pay = padding.y;
     }
-    out[0] = sx * (c * a + s * d);
-    out[1] = sx * (c * b + s * e);
-    out[3] = sy * (c * d - s * a);
-    out[4] = sy * (c * e - s * b);
-    out[6] = a * (sy * s * (py - pay) + sx * c * (pax - px) + px + x) + d * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) + g;
-    out[7] = b * (sy * s * (py - pay) + sx * c * (pax - px) + px + x) + e * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) + h;
+    out[0] = sx * (c * a + s * d) * width;
+    out[1] = sx * (c * b + s * e) * width;
+    out[3] = sy * (c * d - s * a) * height;
+    out[4] = sy * (c * e - s * b) * height;
+    out[6] =
+        a * (sy * s * (py - pay) + sx * c * (pax - px) + px + x) +
+            d * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) +
+            g;
+    out[7] =
+        b * (sy * s * (py - pay) + sx * c * (pax - px) + px + x) +
+            e * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) +
+            h;
     out[2] = out[5] = 0;
     out[8] = 1;
     return out;
@@ -32,24 +38,10 @@ function projectionMatrix(out, width, height) {
     return out;
 }
 function createProjection(width, height) {
-    return new Float32Array([
-        2 / width,
-        0,
-        0,
-        0,
-        -2 / height,
-        0,
-        -1,
-        1,
-        1
-    ]);
+    return new Float32Array([2 / width, 0, 0, 0, -2 / height, 0, -1, 1, 1]);
 }
 function identity() {
-    return new Float32Array([
-        1, 0, 0,
-        0, 1, 0,
-        0, 0, 1
-    ]);
+    return new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 }
 
 class Timeframe {
@@ -60,12 +52,6 @@ class Timeframe {
     }
     in(frame) {
         return (this.start >= frame && frame <= this.start + this.duration);
-    }
-    split(splitPoint) {
-        let t = splitPoint - this.start;
-        let s = new Timeframe(splitPoint, this.duration - t);
-        this.duration = t;
-        s.addElements(this.elements);
     }
     addElement(element) {
         this.elements.push(element);
@@ -166,12 +152,13 @@ class Element {
             }
         }
         progress = frame / duration;
+        console.log(frame, progress);
         let data = this.motion ? this.from.getData(this.to, this.easing(progress)) : this.from;
         alpha *= data.alpha;
         if (!alpha) {
             return;
         }
-        computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, data.transformationPoint, data.angle, this.object.padding);
+        computeMatrix(parentMatrix, this.transMatrix, data.pos, data.scale, this.object.width || 1, this.object.height || 1, data.transformationPoint, data.angle, this.object.padding);
         this.object.draw(this.transMatrix, alpha, frame);
     }
 }
@@ -235,18 +222,21 @@ class TimeframeLayer {
 }
 
 class Timeline {
-    constructor(loop = false) {
+    constructor(loop = false, initLayers) {
         this.loop = loop;
         this.layers = [];
         this.duration = 0;
+        this.addLayers(initLayers);
     }
     addLayer() {
         this.layers.push(new TimeframeLayer);
+        return this;
     }
     addLayers(count) {
         for (let i = 0; i < count; ++i) {
             this.addLayer();
         }
+        return this;
     }
     addToLayer(obj, from, to, start, duration, layer, continueFrom = 0) {
         if (layer > this.layers.length - 1) {
@@ -320,16 +310,11 @@ class Renderable {
         this.base = base;
         this.gl = base.gl;
         this.loop = true;
-        this.shapeBuffer = this.gl.createBuffer();
+        this.unitBuffer = base.unitBuffer;
         this.attribs = {};
         this.uniforms = {};
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
-            0, 0,
-            0, h,
-            w, 0,
-            w, h
-        ]), this.gl.STATIC_DRAW);
+        this.width = w;
+        this.height = h;
     }
     getProgramData(attribs, uniforms) {
         if (!this.program) {
@@ -437,7 +422,7 @@ class Rectangle extends Renderable {
         if (this.base.lastUsedProgram !== this.program) {
             this.base.lastUsedProgram = this.program;
         }
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
         this.gl.vertexAttribPointer(this.attribs['aPosition'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
         this.gl.enableVertexAttribArray(this.attribs['aPosition']);
         this.gl.uniform4fv(this.uniforms['uColor'], this.color.mixAlpha(alpha));
@@ -546,6 +531,7 @@ class Sprite extends Renderable {
                 throw 'Index is required';
             }
             let sprite = img.get(index);
+            // super(base, 1300, 900);
             super(base, sprite.width, sprite.height);
             this.textureCoords = sprite.texCoords;
             this.texture = sprite.source.texture;
@@ -581,7 +567,7 @@ class Sprite extends Renderable {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
         this.gl.vertexAttribPointer(this.attribs["aTextureCoords"], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
         this.gl.enableVertexAttribArray(this.attribs["aTextureCoords"]);
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
         this.gl.vertexAttribPointer(this.attribs['aPosition'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
         this.gl.enableVertexAttribArray(this.attribs['aPosition']);
         this.gl.uniform1i(this.uniforms['sampler'], 0);
@@ -607,6 +593,7 @@ class Renderer {
         this.backgroundColor = bgColor;
         this.render = this.render.bind(this);
         this.update = this.update.bind(this);
+        this.changeBlendFunc(this.gl.ONE);
     }
     play() {
         if (!this.isPlaying) {
@@ -686,7 +673,10 @@ class Base {
         this.canvas = document.getElementById(canvas_id);
         if (this.canvas.nodeName != "CANVAS") {
             this.canvas = document.createElement("canvas");
+            this.textCanvas = document.createElement('canvas');
+            this.textCanvas.style.display = 'none';
             document.getElementById(canvas_id).appendChild(this.canvas);
+            document.getElementById(canvas_id).appendChild(this.textCanvas);
         }
         this.gl = (this.canvas.getContext(webgl2 ? "webgl2" : "webgl", { alpha: false, depth: false }));
         if (!this.gl) {
@@ -704,6 +694,14 @@ class Base {
         this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
         this.defaultShapeProgram = this.newProgram();
         this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
+        this.unitBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
+            0, 0,
+            0, 1,
+            1, 0,
+            1, 1
+        ]), this.gl.STATIC_DRAW);
     }
     setCanvasSize(width, height) {
         this.canvas.width = width;

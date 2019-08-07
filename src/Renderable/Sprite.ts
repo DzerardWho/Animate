@@ -111,7 +111,7 @@ export class Sprite extends Renderable {
 		);
         this.gl.enableVertexAttribArray(this.attribs["aTextureCoords"]);
     
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
 		this.gl.vertexAttribPointer(
             this.attribs['aPosition'],
 			2,

@@ -5,12 +5,15 @@ export class Renderable {
 	attribs: Object;
 	uniforms: Object;
 
-	shapeBuffer: WebGLBuffer;
+	// shapeBuffer: WebGLBuffer;
+	unitBuffer: WebGLBuffer;
 	program: WebGLProgram;
 	gl: WebGLRenderingContext;
 	base: Base;
 	hasTransparency: boolean;
 	loop: boolean;
+	width: number;
+	height: number;
 	
 	padding: vec2;
 
@@ -22,23 +25,26 @@ export class Renderable {
 		this.base = base;
 		this.gl = base.gl;
 		this.loop = true;
+		this.unitBuffer = base.unitBuffer;
 
-		this.shapeBuffer = this.gl.createBuffer();
+		// this.shapeBuffer = this.gl.createBuffer();
 		this.attribs = {};
 		this.uniforms = {};
+		this.width = w;
+		this.height = h;
 
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
+		// this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
 
-		this.gl.bufferData(
-			this.gl.ARRAY_BUFFER,
-			new Float32Array([
-				0, 0,
-				0, h,
-				w, 0,
-				w, h
-			]),
-			this.gl.STATIC_DRAW
-		);
+		// this.gl.bufferData(
+		// 	this.gl.ARRAY_BUFFER,
+		// 	new Float32Array([
+		// 		0, 0,
+		// 		0, h,
+		// 		w, 0,
+		// 		w, h
+		// 	]),
+		// 	this.gl.STATIC_DRAW
+		// );
 	}
 
 	getProgramData(attribs: Array<string>, uniforms: Array<string>){

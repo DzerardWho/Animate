@@ -33,7 +33,7 @@ export class Rectangle extends Renderable {
 			this.base.lastUsedProgram = this.program;
 		}
 
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
 		this.gl.vertexAttribPointer(
 			this.attribs['aPosition'],
 			2,
