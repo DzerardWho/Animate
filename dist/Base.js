@@ -13,14 +13,12 @@ function computeMatrix(_in, out, pos, scale, width, height, trans, angle, paddin
     out[1] = sx * (c * b + s * e) * width;
     out[3] = sy * (c * d - s * a) * height;
     out[4] = sy * (c * e - s * b) * height;
-    out[6] =
-        a * (sy * s * (py - pay) + sx * c * (pax - px) + px + x) +
-            d * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) +
-            g;
-    out[7] =
-        b * (sy * s * (py - pay) + sx * c * (pax - px) + px + x) +
-            e * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) +
-            h;
+    out[6] = a * (sy * s * (py - pay) + sx * c * (pax - px) + px + x) +
+        d * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) +
+        g;
+    out[7] = b * (sy * s * (py - pay) + sx * c * (pax - px) + px + x) +
+        e * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) +
+        h;
     out[2] = out[5] = 0;
     out[8] = 1;
     return out;
@@ -152,7 +150,6 @@ class Element {
             }
         }
         progress = frame / duration;
-        console.log(frame, progress);
         let data = this.motion ? this.from.getData(this.to, this.easing(progress)) : this.from;
         alpha *= data.alpha;
         if (!alpha) {
@@ -531,7 +528,6 @@ class Sprite extends Renderable {
                 throw 'Index is required';
             }
             let sprite = img.get(index);
-            // super(base, 1300, 900);
             super(base, sprite.width, sprite.height);
             this.textureCoords = sprite.texCoords;
             this.texture = sprite.source.texture;
