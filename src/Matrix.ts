@@ -21,11 +21,11 @@ export function computeMatrix(_in: Matrix, out: Matrix, pos: vec2, scale: vec2, 
     out[3] = sy * (c * d - s * a) * height;
     out[4] = sy * (c * e - s * b) * height;
     out[6] = a * (sy * s * (py - pay) + sx * c * (pax - px) + px + x) +
-             d * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) +
-             g;
+        d * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) +
+        g;
     out[7] = b * (sy * s * (py - pay) + sx * c * (pax - px) + px + x) +
-             e * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) +
-             h;
+        e * (sy * c * (pay - py) + sx * s * (pax - px) + py + y) +
+        h;
     out[2] = out[5] = 0;
     out[8] = 1;
 

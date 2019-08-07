@@ -26,8 +26,10 @@ function createAnimation() {
     // Layer 2
     let s = new Timeline(true);
     s.addLayer();
+    // mainTl.addToLayer(new Sprite(base, spriteheets[0], true, 'image 2'), null, null, 0, 99, 1, 0);
     mainTl.addToLayer(new Sprite(base, spriteheets[0], true, 'image 2'), {scale: {x: 650/1300, y: 450/900}}, null, 0, 99, 1, 0);
-    // mainTl.addToLayer(new Sprite(base, img, false), {scale: {x: 650/1300, y: 450/900}}, null, 0, 99, 1, 0);
+    // mainTl.addToLayer(new Sprite(base, img, true), null, null, 0, 99, 1, 0);
+    // mainTl.addToLayer(new Sprite(base, img, true), {scale: {x: 650/1300, y: 450/900}}, null, 0, 99, 1, 0);
     // mainTl.addToLayer(new Sprite(base, spriteheets[5], true, 'image 177'), null, null, 0, 99, 1, 0);
 
     // Vinyl
