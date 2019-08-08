@@ -31,7 +31,7 @@ export class Timeline {
 
     addToLayer(obj: timeElement, from: _Data, to: _Data, start: number, duration: number, layer: number, continueFrom: number = 0) {
         if (layer > this.layers.length - 1) {
-            throw "Layer out of range";
+            throw new Error("Layer out of range");
         }
 
         this.duration += this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);

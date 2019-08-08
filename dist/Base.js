@@ -237,7 +237,7 @@ class Timeline {
     }
     addToLayer(obj, from, to, start, duration, layer, continueFrom = 0) {
         if (layer > this.layers.length - 1) {
-            throw "Layer out of range";
+            throw new Error("Layer out of range");
         }
         this.duration += this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);
         return this;
@@ -428,48 +428,10 @@ class Rectangle extends Renderable {
     }
 }
 
-class SpritesheetLoader {
-    constructor(manifestPath, fileLocation = '/', callback) {
-        this.loadComplete = false;
-        this.files = {};
-        this.manifestLoader = new createjs.JSONLoader(createjs.LoadItem.create(manifestPath));
-        this.manifestLoader.on('complete', () => {
-            let fileLoader = new createjs.LoadQueue(true, fileLocation);
-            this.manifest = this.manifestLoader.getResult();
-            for (let i in this.manifest) {
-                fileLoader.loadFile({
-                    'id': i,
-                    'src': i
-                });
-            }
-            fileLoader.on('complete', () => {
-                for (let i of fileLoader.getItems(false)) {
-                    this.files[i.item.id] = i.result;
-                }
-                this.loadComplete = true;
-                if (typeof callback === 'function') {
-                    callback();
-                }
-            });
-            fileLoader.load();
-        });
-        this.manifestLoader.load();
-    }
-    generateSpritesheets(base) {
-        if (!this.loadComplete) {
-            return;
-        }
-        let t = {};
-        for (let i in this.files) {
-            t[i.replace('.png', '')] = new Spritesheet(base, this.manifest[i], this.files[i]);
-        }
-        return t;
-    }
-}
 class Spritesheet {
     constructor(base, data, img) {
         this.gl = base.gl;
-        this.sprites = [];
+        this.sprites = {};
         this.texture = this.gl.createTexture();
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
@@ -491,7 +453,7 @@ class Spritesheet {
                 w, y,
                 w, h
             ]), this.gl.STATIC_DRAW);
-            this.sprites[i] = {
+            this.sprites[i] = ({
                 texCoords: tmp,
                 source: this,
                 width: data[i].width,
@@ -499,7 +461,7 @@ class Spritesheet {
                 pad_x: data[i].pad_x || 0,
                 pad_y: data[i].pad_y || 0,
                 transparent: data[i].transparent
-            };
+            });
         }
         tmp = null;
     }
@@ -525,7 +487,7 @@ class Sprite extends Renderable {
         }
         else {
             if (!index) {
-                throw 'Index is required';
+                throw new Error('Index is required');
             }
             let sprite = img.get(index);
             super(base, sprite.width, sprite.height);
@@ -571,12 +533,244 @@ class Sprite extends Renderable {
         this.gl.uniform1f(this.uniforms['alpha'], alpha);
         this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
     }
+    switchBlendFunc() {
+        this.blendFunc = this.blendFunc === this.gl.ONE ? this.gl.SRC_ALPHA : this.gl.ONE;
+    }
+}
+
+const recognizedTypes = [
+    'image',
+    'audio',
+    'spritesheet',
+    'json',
+    'js',
+    'anime'
+];
+let fileExt = new RegExp('.*?\\.(png|webp|jpg|jpeg|sp\\.json|json|js|anime|wav|mp3|webm)$', 'miu');
+class Item {
+    constructor(id, src, fileFormat, type, transparent) {
+        this.id = id;
+        this.src = src;
+        if (!fileFormat) {
+            let format = src.match(fileExt);
+            if (!format) {
+                throw new Error('Unsupported file type');
+            }
+            this.fileFormat = format[1];
+        }
+        else {
+            if (!recognizedTypes.includes(fileFormat)) {
+                throw new Error('Unsupported file type');
+            }
+            this.fileFormat = fileFormat;
+        }
+        if (recognizedTypes.includes(type)) {
+            this.type = type;
+            switch (type) {
+                case 'audio':
+                    this.result = new Audio();
+                    break;
+                case 'image':
+                    this.result = new Image();
+                    break;
+                default:
+                    break;
+            }
+        }
+        else {
+            switch (this.fileFormat) {
+                case 'png':
+                case 'webp':
+                case 'jpg':
+                case 'jpeg':
+                    this.transparent = transparent || false;
+                    this.type = 'image';
+                    this.result = new Image();
+                    break;
+                case 'sp.json':
+                    this.type = 'spritesheet';
+                    break;
+                case 'json':
+                case 'anime':
+                case 'js':
+                    this.type = this.fileFormat.toLowerCase();
+                    break;
+                case 'wav':
+                case 'mp3':
+                case 'webm':
+                    this.type = 'audio';
+                    this.result = new Audio();
+                    break;
+            }
+        }
+    }
+}
+
+class AssetLoader {
+    constructor(maxRetries = 3) {
+        this.maxRetries = maxRetries;
+        this.downloadQueue = [];
+        this.downloaded = [];
+        this.errors = [];
+    }
+    download(mode = 0) {
+        return new Promise((resolve, reject) => {
+            let downloadQueue = mode === 0 ? this.downloadQueue : this.errors;
+            this.toDownload = downloadQueue.length;
+            if (downloadQueue.length === 0) {
+                resolve(this.downloaded);
+            }
+            for (let element of downloadQueue) {
+                let request = new XMLHttpRequest();
+                if (element.type === 'image') {
+                    request.responseType = 'blob';
+                }
+                request.onload = async () => {
+                    if (request.status !== 200) {
+                        this.errors.push(element);
+                        if (this.isDone()) {
+                            resolve(this.downloaded);
+                        }
+                    }
+                    switch (element.type) {
+                        case 'image':
+                            await new Promise((resolve) => {
+                                element.result.src = URL.createObjectURL(new Blob([request.response], { type: `image/${element.fileFormat}` }));
+                                element.result.onload = () => {
+                                    URL.revokeObjectURL(element.result.src);
+                                    resolve();
+                                };
+                            });
+                            break;
+                        case 'audio':
+                            await new Promise((resolve) => {
+                                element.result.src = URL.createObjectURL(new Blob([request.response], { type: `audio/${element.fileFormat}` }));
+                                element.result.onload = () => {
+                                    URL.revokeObjectURL(element.result.src);
+                                    resolve();
+                                };
+                            });
+                            break;
+                        case 'json':
+                        case 'spritesheet':
+                            element.result = JSON.parse(request.responseText);
+                            break;
+                        case 'js':
+                            element.result = request.responseText;
+                            break;
+                        case 'anime':
+                            let t = new DOMParser();
+                            element.result = t.parseFromString(request.responseText, 'text/xml');
+                    }
+                    this.downloaded.push(element);
+                    downloadQueue.splice(downloadQueue.indexOf(element), 1);
+                    if (this.isDone()) {
+                        resolve(this.downloaded);
+                    }
+                };
+                request.onerror = () => {
+                    reject(new Error(`Error while downloading file: ${request.statusText}`));
+                };
+                request.open('GET', element.src, true);
+                request.send();
+            }
+        });
+    }
+    async retryErrors() {
+        if (this.errors.length) {
+            for (let i = 0; i < this.maxRetries; ++i) {
+                await this.download(1);
+                if (this.isDone()) {
+                    return this.downloaded;
+                }
+            }
+            throw new Error('Exceeded max number of retries.');
+        }
+    }
+    pushFile(id, src, fileFormat, type, transparent) {
+        this.downloadQueue.push(new Item(id, src, fileFormat, type, transparent));
+    }
+    pushManifest(manifest) {
+        for (let i of manifest) {
+            this.pushFile(i.id, i.src, i.fileFormat, i.type, i.transparent);
+        }
+    }
+    isDone() {
+        return (this.downloaded.length + this.errors.length === this.toDownload);
+    }
+    clear() {
+        this.downloadQueue.slice(0, this.downloadQueue.length);
+        this.downloaded.slice(0, this.downloaded.length);
+        this.errors.slice(0, this.errors.length);
+    }
+}
+
+class AssetMenager {
+    constructor(base) {
+        this.base = base;
+        this.assets = {};
+        this.spritesheets = {};
+    }
+    loadAssets(assetLoader) {
+        let assets = assetLoader.downloaded.splice(0, assetLoader.downloaded.length);
+        let img, data;
+        for (let spritesheet of assets.filter((v) => { return v.type === 'spritesheet'; })) {
+            assets.splice(assets.indexOf(spritesheet), 1);
+            for (let sheet in spritesheet.result) {
+                img = assets.find((value) => {
+                    return value.id === sheet;
+                });
+                if (!img) {
+                    throw new Error('Missing spritesheet');
+                }
+                assets.splice(assets.indexOf(img), 1);
+                data = spritesheet.result[sheet];
+                sheet.replace(fileExt, '');
+                sheet = 'sp_' + sheet;
+                this.spritesheets[sheet] = new Spritesheet(this.base, data, img.result);
+            }
+        }
+        for (let asset of assets) {
+            switch (asset.type) {
+                case 'image':
+                    this.loadAssets[asset.id] = new Sprite(this.base, asset.result, asset.transparent);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    createSprite(id) {
+        let sp, k;
+        for (let i in this.spritesheets) {
+            if (k = this.spritesheets[i].get(id)) {
+                sp = i;
+                break;
+            }
+        }
+        if (!sp) {
+            throw new Error(`There is no image named "${id}" in spritesheets.`);
+        }
+        return (this.assets[id] = new Sprite(this.base, this.spritesheets[sp], k.transparent, id));
+    }
+    createAllSprites() {
+        let s;
+        for (let i in this.spritesheets) {
+            s = this.spritesheets[i];
+            for (let id in this.spritesheets[i].sprites) {
+                this.assets[id] = new Sprite(this.base, s, s.sprites[id].transparent, id);
+            }
+        }
+    }
+    get(id) {
+        return this.assets[id];
+    }
 }
 
 class Renderer {
     constructor(base, fps, width, height, bgColor) {
         if (fps <= 0) {
-            throw "Fps must be a positive number";
+            throw new Error("Fps must be a positive number");
         }
         this.gl = base.gl;
         this.timing = 1000 / fps;
@@ -619,7 +813,7 @@ class Renderer {
     }
     render() {
         if (!this.mainTimeline) {
-            throw "There is nothing to render (mainTimeline isn't set)";
+            throw new Error("There is nothing to render (mainTimeline isn't set)");
         }
         if (!(this.frameUpdated && this.isPlaying)) {
             return;
@@ -799,5 +993,5 @@ class Base {
     }
 }
 
-// export { Base, Color, Data, Element, Linear, Rectangle, Renderable, Sprite, Spritesheet, SpritesheetLoader, Timeframe, TimeframeLayer, Timeline, computeMatrix, dfs, dsfs, dsvs, dvs, projectionMatrix };
+// export { AssetLoader, AssetMenager, Base, Color, Data, Element, Item, Linear, Rectangle, Renderable, Sprite, Spritesheet, Timeframe, TimeframeLayer, Timeline, computeMatrix, dfs, dsfs, dsvs, dvs, projectionMatrix };
 //# sourceMappingURL=Base.js.map

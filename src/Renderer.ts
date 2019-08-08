@@ -19,7 +19,7 @@ export class Renderer {
 
     constructor(base: Base, fps: number, width: number, height: number, bgColor: Color) {
         if (fps <= 0) {
-            throw "Fps must be a positive number";
+            throw new Error("Fps must be a positive number");
         }
 
         this.gl = base.gl;
@@ -68,7 +68,7 @@ export class Renderer {
 
     render() {
         if (!this.mainTimeline) {
-            throw "There is nothing to render (mainTimeline isn't set)";
+            throw new Error("There is nothing to render (mainTimeline isn't set)");
         }
         if (!(this.frameUpdated && this.isPlaying)) {
             return;

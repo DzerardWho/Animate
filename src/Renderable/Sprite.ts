@@ -1,7 +1,7 @@
 import { Renderable } from './Renderable'
 import { Base } from '../Base'
 import { Matrix, _Color } from '../types'
-import { Spritesheet } from '../Spritesheet'
+import { Spritesheet } from '../AssetManagement/Spritesheet'
 
 export class Sprite extends Renderable {
 	attribs: Object;
@@ -12,7 +12,7 @@ export class Sprite extends Renderable {
 	loop: boolean;
 	blendFunc: number;
 
-	constructor(base: Base, img: ImageData | Spritesheet, transparent: boolean, index?: string) {
+	constructor(base: Base, img: ImageData | Spritesheet, transparent: boolean, index?: string | number) {
 		if (!(img instanceof Spritesheet)) {
 			super(base, img.width, img.height);
 
@@ -56,7 +56,7 @@ export class Sprite extends Renderable {
 			);
 		} else {
 			if (!index) {
-				throw 'Index is required';
+				throw new Error('Index is required');
 			}
 
 			let sprite = img.get(index);
@@ -126,5 +126,9 @@ export class Sprite extends Renderable {
 		this.gl.uniform1f(this.uniforms['alpha'], alpha);
         
 		this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+	}
+
+	switchBlendFunc() {
+		this.blendFunc = this.blendFunc === this.gl.ONE ? this.gl.SRC_ALPHA : this.gl.ONE;
 	}
 }

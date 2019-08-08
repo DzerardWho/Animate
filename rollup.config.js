@@ -5,7 +5,7 @@ export default{
         './src/index.ts'
     ],
     plugins: [
-        typescript({lib: ['es5', 'es6', 'dom'], target: 'es6', removeComments: true})
+        typescript({lib: ['es5', 'es6', 'dom'], target: 'ES2019', removeComments: true})
     ],
     output: [
         {

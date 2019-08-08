@@ -10,7 +10,6 @@ export class Renderable {
 	program: WebGLProgram;
 	gl: WebGLRenderingContext;
 	base: Base;
-	hasTransparency: boolean;
 	loop: boolean;
 	width: number;
 	height: number;
@@ -27,24 +26,10 @@ export class Renderable {
 		this.loop = true;
 		this.unitBuffer = base.unitBuffer;
 
-		// this.shapeBuffer = this.gl.createBuffer();
 		this.attribs = {};
 		this.uniforms = {};
 		this.width = w;
 		this.height = h;
-
-		// this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shapeBuffer);
-
-		// this.gl.bufferData(
-		// 	this.gl.ARRAY_BUFFER,
-		// 	new Float32Array([
-		// 		0, 0,
-		// 		0, h,
-		// 		w, 0,
-		// 		w, h
-		// 	]),
-		// 	this.gl.STATIC_DRAW
-		// );
 	}
 
 	getProgramData(attribs: Array<string>, uniforms: Array<string>){

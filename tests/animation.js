@@ -1,6 +1,7 @@
 
 let base, john;
 let body, face, glasses, hat, hair_1, hair_2, hair_3;
+let assets, assetLoader;
 
 function init(){
     base = new Base(false, 650, 450, 'canvas', 24, false, [118, 65, 178]);
@@ -9,21 +10,30 @@ function init(){
     tl.addToLayer(john, {pos: {x: 221.2, y: 130.45}, scale: {x: 0.8, y: 0.8}}, {pos: {x: 248.5, y: 28.85}, scale: {x: 0.69999695, y: 0.69999695}}, 0, 170, 0, 0);
     base.mainTimeline = tl;
 
-    let spritesheet = new SpritesheetLoader('../spritesheet/spritesheet.json', '../spritesheet/', () => {
-        let sprites = spritesheet.generateSpritesheets(base);
-        
-        body = new Sprite(base, sprites[1], true, '41');
-        face = new Sprite(base, sprites[1], true, '45');
-        hair_1 = new Sprite(base, sprites[1], true, '43');
-        hair_2 = new Sprite(base, sprites[1], true, '51');
-        hair_3 = new Sprite(base, sprites[1], true, '53');
-    
-        hat = new Timeline(true);
-        hat.addLayer();
-        hat.addToLayer(new Sprite(base, sprites[1], true, '49'), {pos: {x: -135, y: -143.5}}, null, 0, 1, 0, 0);
-        glasses = new Timeline(true);
-        glasses.addLayer();
-        glasses.addToLayer(new Sprite(base, sprites[1], true, '47'), {pos: {x: -246.5, y: -152.5}}, null, 0, 1, 0, 0);
+    assets = new AssetMenager(base);
+    assetLoader = new AssetLoader();
+
+    assetLoader.pushManifest([
+        {id: 'sp', src: '../spritesheet/spritesheet.json', type: 'spritesheet'},
+        {id: '0.png', src: '../spritesheet/0.png', type: 'image'},
+        {id: '1.png', src: '../spritesheet/1.png', type: 'image'},
+        {id: '2.png', src: '../spritesheet/2.png', type: 'image'}
+    ])
+
+    assetLoader.download().then(() => {
+        assets.loadAssets(assetLoader);
+        assets.createAllSprites();
+
+        body = assets.get(41);
+        face = assets.get(45);
+        hair_1 = assets.get(43);
+        hair_2 = assets.get(51);
+        hair_3 = assets.get(53);
+
+        hat = new Timeline(true, 1);
+        hat.addToLayer(assets.get(49), {pos: {x: -135, y: -143.5}}, null, 0, 1, 0, 0);
+        glasses = new Timeline(true, 1);
+        glasses.addToLayer(assets.get(47), {pos: {x: -246.5, y: -152.5}}, null, 0, 1, 0, 0);
     
         con();
     });
