@@ -48,7 +48,7 @@ export class AssetMenager {
         for (let asset of assets) {
             switch (asset.type) {
                 case 'image':
-                    this.loadAssets[asset.id] = new Sprite(this.base, asset.result, asset.transparent);
+                    this.assets[asset.id] = new Sprite(this.base, asset.result, asset.transparent);
                     break;
                 default:
                     // TODO: reszta zasobów

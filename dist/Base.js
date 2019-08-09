@@ -481,9 +481,7 @@ class Sprite extends Renderable {
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
-            this.textureCoords = this.gl.createBuffer();
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 1, 1, 0, 1, 1]), this.gl.STATIC_DRAW);
+            this.textureCoords = this.unitBuffer;
         }
         else {
             if (!index) {
@@ -733,7 +731,7 @@ class AssetMenager {
         for (let asset of assets) {
             switch (asset.type) {
                 case 'image':
-                    this.loadAssets[asset.id] = new Sprite(this.base, asset.result, asset.transparent);
+                    this.assets[asset.id] = new Sprite(this.base, asset.result, asset.transparent);
                     break;
                 default:
                     break;
@@ -886,6 +884,14 @@ class Base {
         this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
         this.unitBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
+            0, 0,
+            0, 1,
+            1, 0,
+            1, 1
+        ]), this.gl.STATIC_DRAW);
+        this.unitTextureBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitTextureBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
             0, 0,
             0, 1,

@@ -81,16 +81,21 @@ export class Spritesheet {
             y = data[i].y / img.height;
             h = (data[i].y + data[i].height) / img.height;
 
-            tmp = this.gl.createBuffer();
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tmp);
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
-                x, y,
-                x, h,
-                w, y,
-                w, h
-            ]), this.gl.STATIC_DRAW
-            );
+            if (x === 0 && y === 0 && w === 1 && h === 1) {
+                tmp = base.unitBuffer;
+            } else {
+                tmp = this.gl.createBuffer();
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tmp);
+                this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
+                    x, y,
+                    x, h,
+                    w, y,
+                    w, h
+                ]), this.gl.STATIC_DRAW
+                );
 
+            }
+            
             this.sprites[i] = ({
                 texCoords: tmp,
                 source: this,
@@ -101,7 +106,6 @@ export class Spritesheet {
                 transparent: data[i].transparent
             });
         }
-        tmp = null;
     }
 
     get(index: string | number): _Sprite | undefined {

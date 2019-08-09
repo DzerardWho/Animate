@@ -47,13 +47,7 @@ export class Sprite extends Renderable {
 				img
 			);
 
-			this.textureCoords = this.gl.createBuffer();
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
-			this.gl.bufferData(
-				this.gl.ARRAY_BUFFER,
-				new Float32Array([0, 0, 0, 1, 1, 0, 1, 1]),
-				this.gl.STATIC_DRAW
-			);
+			this.textureCoords = this.unitBuffer;
 		} else {
 			if (!index) {
 				throw new Error('Index is required');
