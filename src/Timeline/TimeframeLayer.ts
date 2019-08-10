@@ -8,20 +8,16 @@ export class TimeframeLayer {
 
     constructor() {
         this.frames = [];
+        this.duration = 0;
     }
 
     addElement(obj: timeElement, from: _Data, to: _Data = null, start: number, duration: number, continueFrom: number = 0) {
         // TODO 
         // Coś tu nie działa
-        let _dur = start + duration;
-        if (_dur > this.duration && start <= this.duration) {
-            _dur -= this.duration;
-            this.duration += _dur;
+        if (start + duration > this.duration) {
+            this.duration = start + duration;
         }
 
-        // let elem = new Element(obj, from, to, continueFrom);
-        //  this.solveCollisions( this.collision(start, duration), start, duration);
-        // let timeframe =  this.find(start, start + duration);
         let timeFrame = this.find(start, duration);
         if (timeFrame) {
             timeFrame.addElement(new Element(obj, from, to, continueFrom))
@@ -35,27 +31,6 @@ export class TimeframeLayer {
                 this.frames.splice(index + 1, 0, t);
             }
         }
-
-        return _dur;
-    }
-
-    //  solveCollisions(collisions: Array<Timeframe>, start: number, duration: number){
-
-    // }
-
-    collision(start: number, duration: number) {
-        return this.frames.filter((val) => {
-            if (start === val.start && duration === val.duration) {
-                return false;
-            }
-            if (start >= val.start && val.start < start + duration) {
-                return true;
-            }
-            if (val.start >= start && start < val.start + val.duration) {
-                return true;
-            }
-            return false;
-        });
     }
 
     findByFrame(frame: number) {

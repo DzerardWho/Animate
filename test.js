@@ -18,9 +18,9 @@ function init() {
             head = new Sprite(b, headimg, true);
 
             john = new Timeline();
-            john.addLayer();
-            mainTimeline.addLayer();
-            mainTimeline.addToLayer(t, {
+            john.createLayer();
+            mainTimeline.createLayer();
+            mainTimeline.addObjectToLayer(t, {
                 pos: {
                     x: 50,
                     y: 100
@@ -32,25 +32,25 @@ function init() {
                 },
                 alpha: 0
             }, 0, 150, 0, 0);
-            john.addToLayer(body, {
+            john.addObjectToLayer(body, {
                 pos: {
                     x: 0,
                     y: 0
                 },
             }, null, 0, 20, 0, 0);
-            // john.addToLayer(t2, {
+            // john.addObjectToLayer(t2, {
             //     pos: {
             //         x: 300,
             //         y: 30
             //     },
             // }, null, 0, 20, 0, 0);
-            john.addToLayer(head, {
+            john.addObjectToLayer(head, {
                 pos: {
                     x: 0,
                     y: 0
                 }
             }, null, 0, 20, 0, 0);
-            // mainTimeline.addToLayer(john, {
+            // mainTimeline.addObjectToLayer(john, {
             //     pos: {
             //         x: 20,
             //         y: 100

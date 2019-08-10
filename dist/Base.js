@@ -163,12 +163,11 @@ class Element {
 class TimeframeLayer {
     constructor() {
         this.frames = [];
+        this.duration = 0;
     }
     addElement(obj, from, to = null, start, duration, continueFrom = 0) {
-        let _dur = start + duration;
-        if (_dur > this.duration && start <= this.duration) {
-            _dur -= this.duration;
-            this.duration += _dur;
+        if (start + duration > this.duration) {
+            this.duration = start + duration;
         }
         let timeFrame = this.find(start, duration);
         if (timeFrame) {
@@ -185,21 +184,6 @@ class TimeframeLayer {
                 this.frames.splice(index + 1, 0, t);
             }
         }
-        return _dur;
-    }
-    collision(start, duration) {
-        return this.frames.filter((val) => {
-            if (start === val.start && duration === val.duration) {
-                return false;
-            }
-            if (start >= val.start && val.start < start + duration) {
-                return true;
-            }
-            if (val.start >= start && start < val.start + val.duration) {
-                return true;
-            }
-            return false;
-        });
     }
     findByFrame(frame) {
         return this.frames.find((val) => {
@@ -223,23 +207,103 @@ class Timeline {
         this.loop = loop;
         this.layers = [];
         this.duration = 0;
-        this.addLayers(initLayers);
+        this.createLayer();
+        this.createMultipleLayers(initLayers - 1);
+        this.lastUsed = {
+            nextFrame: 0,
+            layer: 0
+        };
     }
-    addLayer() {
+    createLayer() {
         this.layers.push(new TimeframeLayer);
         return this;
     }
-    addLayers(count) {
+    createMultipleLayers(count) {
         for (let i = 0; i < count; ++i) {
-            this.addLayer();
+            this.createLayer();
         }
         return this;
     }
-    addToLayer(obj, from, to, start, duration, layer, continueFrom = 0) {
+    addObjectToLayer(obj, from, to, start, duration, layer, continueFrom = 0) {
         if (layer > this.layers.length - 1) {
             throw new Error("Layer out of range");
         }
-        this.duration += this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);
+        this.layers[layer].addElement(obj, from, to, start, duration, continueFrom);
+        if (start + duration > this.duration) {
+            this.duration = start + duration;
+        }
+        return this;
+    }
+    set(data, obj) {
+        if (!data.data) {
+            throw new Error('There is no data to be set.');
+        }
+        if (typeof obj !== 'undefined') {
+            this.lastUsed.obj = obj;
+        }
+        else if (!this.lastUsed.obj) {
+            throw new Error('Object is required.');
+        }
+        data.duration = data.duration || 1;
+        this.lastUsed.layer = data.layer || this.lastUsed.layer;
+        this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
+        this.lastUsed.from = data.data;
+        if (this.lastUsed.layer > this.layers.length - 1) {
+            throw new Error("Layer out of range");
+        }
+        this.layers[this.lastUsed.layer].addElement(this.lastUsed.obj, data.data, null, this.lastUsed.nextFrame, data.duration, data.continueFrom);
+        if (this.lastUsed.nextFrame + data.duration > this.duration) {
+            this.duration = this.lastUsed.nextFrame + data.duration;
+        }
+        this.lastUsed.nextFrame += data.duration;
+        return this;
+    }
+    to(data, obj) {
+        if (!data.data) {
+            throw new Error('There is no data to be set.');
+        }
+        if (typeof obj !== 'undefined') {
+            this.lastUsed.obj = obj;
+        }
+        else if (!this.lastUsed.obj) {
+            throw new Error('Object is required.');
+        }
+        data.duration = data.duration || 1;
+        this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
+        this.lastUsed.layer = data.layer || this.lastUsed.layer;
+        if (this.lastUsed.layer > this.layers.length - 1) {
+            throw new Error("Layer out of range");
+        }
+        this.layers[this.lastUsed.layer].addElement(this.lastUsed.obj, this.lastUsed.from, data.data, this.lastUsed.nextFrame, data.duration, data.continueFrom);
+        if (this.lastUsed.nextFrame + data.duration > this.duration) {
+            this.duration = this.lastUsed.nextFrame + data.duration;
+        }
+        this.lastUsed.nextFrame += data.duration;
+        this.lastUsed.from = data.data;
+        return this;
+    }
+    fromTo(data, obj) {
+        if (!(data.data && data.to)) {
+            throw new Error('There is no data to be set.');
+        }
+        if (typeof obj !== 'undefined') {
+            this.lastUsed.obj = obj;
+        }
+        else if (!this.lastUsed.obj) {
+            throw new Error('Object is required.');
+        }
+        data.duration = data.duration || 1;
+        this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
+        this.lastUsed.layer = data.layer || this.lastUsed.layer;
+        if (this.lastUsed.layer > this.layers.length - 1) {
+            throw new Error("Layer out of range");
+        }
+        this.layers[this.lastUsed.layer].addElement(this.lastUsed.obj, data.data, data.to, this.lastUsed.nextFrame, data.duration, data.continueFrom);
+        if (this.lastUsed.nextFrame + data.duration > this.duration) {
+            this.duration = this.lastUsed.nextFrame + data.duration;
+        }
+        this.lastUsed.nextFrame += data.duration;
+        this.lastUsed.from = data.to;
         return this;
     }
     draw(matrix, alpha = 1, frame) {
@@ -445,14 +509,19 @@ class Spritesheet {
             w = (data[i].x + data[i].width) / img.width;
             y = data[i].y / img.height;
             h = (data[i].y + data[i].height) / img.height;
-            tmp = this.gl.createBuffer();
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tmp);
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
-                x, y,
-                x, h,
-                w, y,
-                w, h
-            ]), this.gl.STATIC_DRAW);
+            if (x === 0 && y === 0 && w === 1 && h === 1) {
+                tmp = base.unitBuffer;
+            }
+            else {
+                tmp = this.gl.createBuffer();
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tmp);
+                this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
+                    x, y,
+                    x, h,
+                    w, y,
+                    w, h
+                ]), this.gl.STATIC_DRAW);
+            }
             this.sprites[i] = ({
                 texCoords: tmp,
                 source: this,
@@ -463,7 +532,6 @@ class Spritesheet {
                 transparent: data[i].transparent
             });
         }
-        tmp = null;
     }
     get(index) {
         return this.sprites[index];
@@ -884,14 +952,6 @@ class Base {
         this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
         this.unitBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
-            0, 0,
-            0, 1,
-            1, 0,
-            1, 1
-        ]), this.gl.STATIC_DRAW);
-        this.unitTextureBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitTextureBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
             0, 0,
             0, 1,

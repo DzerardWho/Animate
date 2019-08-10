@@ -25,3 +25,12 @@ export interface _Data {
 export type Matrix = Array<number> | Float32Array;
 
 export type timeElement = Timeline | Sprite | Rectangle;
+
+export interface elementData {
+    data?: _Data;
+    to?: _Data;
+    start?: number;
+    duration?: number;
+    continueFrom?: number;
+    layer?: number;
+}
