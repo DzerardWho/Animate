@@ -40,6 +40,7 @@ class dummy {
 
     draw() {
         try {
+            window.focus();
             this.audio.play();
         } catch (error) {
             console.error(error);
