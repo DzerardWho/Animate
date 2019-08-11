@@ -858,9 +858,10 @@ class Renderer {
         if (!this.isPlaying) {
             this.isPlaying = true;
             this.render();
+            this.lastUpdate = performance.now();
             setTimeout(() => {
                 this.update();
-                this.updateInterval = setInterval(this.update, this.timing);
+                // this.updateInterval = setInterval(this.update, this.timing);
             }, this.timeToNextUpdate);
         }
     }
@@ -871,16 +872,22 @@ class Renderer {
             this.isPlaying = false;
         }
     }
-    update() {
+    async update() {
         if (this.isPlaying) {
             ++this.frame;
+            // console.log('update');
             this.frameUpdated = true;
             requestAnimationFrame(this.render);
+            // this.timeToNextUpdate = this.timing;
+            this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
+            setTimeout(this.update, this.timeToNextUpdate);
+            if (this.timeToNextUpdate <= 37 || this.timeToNextUpdate >= 43)
+                console.log(this.timeToNextUpdate);
+            // console.log(this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing));
             this.lastUpdate = performance.now();
-            this.timeToNextUpdate = this.timing;
         }
     }
-    render() {
+    async render() {
         if (!this.mainTimeline) {
             throw new Error("There is nothing to render (mainTimeline isn't set)");
         }

@@ -42,6 +42,12 @@ class dummy {
     }
 }
 
+class dd {
+    draw(){
+        console.log(performance.now());
+    }
+}
+
 let ds = 1.09999084;
 // let ds2 = 1;
 let ds2 = 1.09996033;
@@ -505,9 +511,17 @@ function createAnimation() {
     
     audio = new dummy();
 
-    mainTl.set({data:{pos:{x: 0, y: 0}}, layer: 0, start: 74}, audio);
+    mainTl.set({data:{pos:{x: 0, y: 0}}, layer: 0, start: 60}, audio);
+    mainTl.set({data:{pos:{x: 0, y: 0}}, layer: 0, start: 0}, new dd());
+    mainTl.set({data:{pos:{x: 0, y: 0}}, layer: 0, start: 3074}, new dd());
+    // mainTl.set({data:{pos:{x: 0, y: 0}}, layer: 0, start: 74}, audio);
     
     audio.audio = document.getElementById('audio');
+    audio.audio.playbackRate = 0.993;
     
+    // base.play();
+}
+
+function play(){
     base.play();
 }
