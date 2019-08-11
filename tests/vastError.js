@@ -4,6 +4,7 @@ let base, mainTl;
 let spriteheets;
 let img;
 let assets;
+let audio;
 
 function init() {
     // base = new Base(false, 650, 450, 'canvas', 25, false);
@@ -32,16 +33,8 @@ function init() {
 }
 
 class dummy {
-    constructor() {
-        this.audio = new Audio();
-        this.audio.preload = 'auto';
-        this.audio.autoplay = false;
-    }
-
     draw() {
         try {
-            this.audio.pause();
-            window.focus();
             this.audio.play();
         } catch (error) {
             console.error(error);
@@ -510,28 +503,11 @@ function createAnimation() {
     }
 
     
-    let audio = new dummy();
+    audio = new dummy();
 
     mainTl.set({data:{pos:{x: 0, y: 0}}, layer: 0, start: 74}, audio);
     
-    // audio.audio.onload = () => {       
-    //     console.log('loaded');
-    // }
+    audio.audio = document.getElementById('audio');
     
-    let xml = new XMLHttpRequest();
-    xml.responseType = 'blob';
-    xml.onload = () => {
-
-        
-        
-        // audio.audio.src = './sound.mp3'
-        audio.audio.src = URL.createObjectURL(xml.response);
-        // audio.audio.onload = () => {
-        //     console.log('loaded')
-        // }
-        base.play();
-    }
-    xml.open('GET', './sound.mp3', true);
-    xml.send();
-    // base.play();
+    base.play();
 }
