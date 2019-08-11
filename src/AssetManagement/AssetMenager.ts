@@ -57,8 +57,11 @@ export class AssetMenager {
         }
     }
 
-    createSprite(id: string | number) {
+    createSprite(id: string | number, name?: string | number) {
         let sp, k: _Sprite;
+        if (typeof name === 'undefined'){
+            name = id;
+        }
         for (let i in this.spritesheets) {
             if (k = this.spritesheets[i].get(id)) {
                 sp = i;
@@ -70,7 +73,7 @@ export class AssetMenager {
             throw new Error(`There is no image named "${id}" in spritesheets.`);
         }
 
-        return (this.assets[id] = new Sprite(this.base, this.spritesheets[sp], k.transparent, id));
+        return (this.assets[name] = new Sprite(this.base, this.spritesheets[sp], k.transparent, id));
     }
 
     createAllSprites() {

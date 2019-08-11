@@ -245,7 +245,7 @@ class Timeline {
             throw new Error('Object is required.');
         }
         data.duration = data.duration || 1;
-        this.lastUsed.layer = data.layer || this.lastUsed.layer;
+        this.lastUsed.layer = typeof data.layer === 'number' ? data.layer : this.lastUsed.layer;
         this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
         this.lastUsed.from = data.data;
         if (this.lastUsed.layer > this.layers.length - 1) {
@@ -806,8 +806,11 @@ class AssetMenager {
             }
         }
     }
-    createSprite(id) {
+    createSprite(id, name) {
         let sp, k;
+        if (typeof name === 'undefined') {
+            name = id;
+        }
         for (let i in this.spritesheets) {
             if (k = this.spritesheets[i].get(id)) {
                 sp = i;
@@ -817,7 +820,7 @@ class AssetMenager {
         if (!sp) {
             throw new Error(`There is no image named "${id}" in spritesheets.`);
         }
-        return (this.assets[id] = new Sprite(this.base, this.spritesheets[sp], k.transparent, id));
+        return (this.assets[name] = new Sprite(this.base, this.spritesheets[sp], k.transparent, id));
     }
     createAllSprites() {
         let s;
