@@ -246,7 +246,7 @@ class Timeline {
         }
         data.duration = data.duration || 1;
         this.lastUsed.layer = typeof data.layer === 'number' ? data.layer : this.lastUsed.layer;
-        this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
+        this.lastUsed.nextFrame = typeof data.start !== 'undefined' ? data.start : this.lastUsed.nextFrame;
         this.lastUsed.from = data.data;
         if (this.lastUsed.layer > this.layers.length - 1) {
             throw new Error("Layer out of range");
@@ -269,8 +269,8 @@ class Timeline {
             throw new Error('Object is required.');
         }
         data.duration = data.duration || 1;
-        this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
-        this.lastUsed.layer = data.layer || this.lastUsed.layer;
+        this.lastUsed.nextFrame = typeof data.start !== 'undefined' ? data.start : this.lastUsed.nextFrame;
+        this.lastUsed.layer = typeof data.layer === 'number' ? data.layer : this.lastUsed.layer;
         if (this.lastUsed.layer > this.layers.length - 1) {
             throw new Error("Layer out of range");
         }
@@ -293,8 +293,8 @@ class Timeline {
             throw new Error('Object is required.');
         }
         data.duration = data.duration || 1;
-        this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
-        this.lastUsed.layer = data.layer || this.lastUsed.layer;
+        this.lastUsed.nextFrame = typeof data.start !== 'undefined' ? data.start : this.lastUsed.nextFrame;
+        this.lastUsed.layer = typeof data.layer === 'number' ? data.layer : this.lastUsed.layer;
         if (this.lastUsed.layer > this.layers.length - 1) {
             throw new Error("Layer out of range");
         }
@@ -861,7 +861,6 @@ class Renderer {
             this.lastUpdate = performance.now();
             setTimeout(() => {
                 this.update();
-                // this.updateInterval = setInterval(this.update, this.timing);
             }, this.timeToNextUpdate);
         }
     }
@@ -875,15 +874,12 @@ class Renderer {
     async update() {
         if (this.isPlaying) {
             ++this.frame;
-            // console.log('update');
             this.frameUpdated = true;
             requestAnimationFrame(this.render);
-            // this.timeToNextUpdate = this.timing;
             this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
             setTimeout(this.update, this.timeToNextUpdate);
             if (this.timeToNextUpdate <= 37 || this.timeToNextUpdate >= 43)
                 console.log(this.timeToNextUpdate);
-            // console.log(this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing));
             this.lastUpdate = performance.now();
         }
     }

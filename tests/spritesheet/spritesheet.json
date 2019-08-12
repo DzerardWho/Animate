@@ -674,7 +674,7 @@
             "height": 450,
             "pad_x": 93,
             "pad_y": 0,
-            "transparent": true
+            "transparent": false
         },
         "image 93": {
             "x": 0,
@@ -683,7 +683,7 @@
             "height": 450,
             "pad_x": 91,
             "pad_y": 0,
-            "transparent": true
+            "transparent": false
         },
         "image 233": {
             "x": 472,
@@ -1108,7 +1108,7 @@
             "height": 362,
             "pad_x": 109,
             "pad_y": 58,
-            "transparent": true
+            "transparent": false
         },
         "image 159": {
             "x": 384,

@@ -71,8 +71,8 @@ export class Timeline {
 
         this.lastUsed.layer = typeof data.layer === 'number' ? data.layer : this.lastUsed.layer;
         // this.lastUsed.layer = data.layer || this.lastUsed.layer;
-        this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
-        // this.lastUsed.nextFrame = typeof data.start === 'number' ? data.start : this.lastUsed.nextFrame;
+        // this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
+        this.lastUsed.nextFrame = typeof data.start !== 'undefined' ? data.start : this.lastUsed.nextFrame;
         this.lastUsed.from = data.data;
 
         if (this.lastUsed.layer > this.layers.length - 1) {
@@ -102,8 +102,8 @@ export class Timeline {
 
         data.duration = data.duration || 1;
 
-        this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
-        this.lastUsed.layer = data.layer || this.lastUsed.layer;
+        this.lastUsed.nextFrame = typeof data.start !== 'undefined' ? data.start : this.lastUsed.nextFrame;
+        this.lastUsed.layer = typeof data.layer === 'number' ? data.layer : this.lastUsed.layer;
 
         if (this.lastUsed.layer > this.layers.length - 1) {
             throw new Error("Layer out of range");
@@ -133,8 +133,8 @@ export class Timeline {
 
         data.duration = data.duration || 1;
 
-        this.lastUsed.nextFrame = data.start || this.lastUsed.nextFrame;
-        this.lastUsed.layer = data.layer || this.lastUsed.layer;
+        this.lastUsed.nextFrame = typeof data.start !== 'undefined' ? data.start : this.lastUsed.nextFrame;
+        this.lastUsed.layer = typeof data.layer === 'number' ? data.layer : this.lastUsed.layer;
 
         if (this.lastUsed.layer > this.layers.length - 1) {
             throw new Error("Layer out of range");

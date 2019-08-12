@@ -40,9 +40,10 @@ export class Renderer {
         if (!this.isPlaying) {
             this.isPlaying = true;
             this.render();
+            this.lastUpdate = performance.now();
             setTimeout(() => {
                 this.update();
-                this.updateInterval = setInterval(this.update, this.timing);
+                // this.updateInterval = setInterval(this.update, this.timing);
             }, this.timeToNextUpdate);
         }
     }
