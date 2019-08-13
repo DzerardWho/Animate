@@ -26,8 +26,9 @@
     </div>
     <br>
     <i>Demo is above</i>
-    <audio src="./sound.mp3" id="audio" controls="true"></audio>
-    <input type="button" onclick="play()" value="Play">
+    <input type="button" id="play" onclick="play()" value="Play" disabled>
+    <br>
+    <audio src="./sound.mp3" id="audio" controls="true" oncanplaythrough="document.getElementById('play').disabled = false;"></audio>
     <script>
         init();
     </script>
