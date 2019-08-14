@@ -7,7 +7,6 @@ export interface DataElements {
     height: number;
     pad_x: number;
     pad_y: number;
-    transparent: boolean;
 }
 
 export interface Data {
@@ -26,7 +25,6 @@ export interface _Sprite {
     height: number;
     pad_x: number;
     pad_y: number;
-    transparent: boolean;
 }
 
 export interface _Spritesheet {
@@ -58,12 +56,12 @@ export class Spritesheet {
         this.gl.texParameteri(
             this.gl.TEXTURE_2D,
             this.gl.TEXTURE_MIN_FILTER,
-            this.gl.LINEAR
+            this.gl.NEAREST
         );
         this.gl.texParameteri(
             this.gl.TEXTURE_2D,
             this.gl.TEXTURE_MAG_FILTER,
-            this.gl.LINEAR
+            this.gl.NEAREST
         );
         this.gl.texImage2D(
             this.gl.TEXTURE_2D,
@@ -102,8 +100,7 @@ export class Spritesheet {
                 width: data[i].width,
                 height: data[i].height,
                 pad_x: data[i].pad_x || 0,
-                pad_y: data[i].pad_y || 0,
-                transparent: data[i].transparent
+                pad_y: data[i].pad_y || 0
             });
         }
     }

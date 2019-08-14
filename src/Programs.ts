@@ -13,7 +13,9 @@ export const dfs = `precision mediump float;
 uniform vec4 uColor;
 
 void main(){
-    gl_FragColor = uColor;
+    vec4 color = uColor;
+    color.rgb *= color.a;
+    gl_FragColor = color;
 }`;
 
 export const dsvs = `precision mediump float;
@@ -38,5 +40,7 @@ uniform sampler2D sampler;
 
 void main(){
     vec4 color = texture2D(sampler, f_texCoord);
-	gl_FragColor = vec4(color.rgb, color.a * alpha);
+    color.a *= alpha;
+    color.rgb *= color.a;
+	gl_FragColor = color;
 }`;

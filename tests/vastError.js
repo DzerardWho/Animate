@@ -7,7 +7,6 @@ let assets;
 let audio;
 
 function init() {
-    // base = new Base(false, 650, 450, 'canvas', 25, false);
     base = new Base(false, 650, 450, 'canvas', 25, false, [0, 0, 0, -1]);
     mainTl = new Timeline(false, 13);
     base.mainTimeline = mainTl;
@@ -21,8 +20,7 @@ function init() {
         {id: '3.png', src: './spritesheet/3.png', type: 'image'},
         {id: '4.png', src: './spritesheet/4.png', type: 'image'},
         {id: '5.png', src: './spritesheet/5.png', type: 'image'},
-        {id: '6.png', src: './spritesheet/6.png', type: 'image'},
-        {id: '_image 2.png', src: './image 2.png', type: 'image'}
+        {id: '6.png', src: './spritesheet/6.png', type: 'image'}
     ])
 
     assetLoader.download().then(() => {
@@ -1081,8 +1079,8 @@ function createAnimation() {
 
             .fromTo({data:{pos:{x:368,y:211},alpha:0},to:{pos:{x:358.15,y:213.9}}, start:474, duration:13}, shape_58)
             .to({data:{pos:{x:321.05,y:224.8}}, duration:49})
-            .to({data:{pos:{x:311.2,y:227.65}}, duration:13})
-            .set({data:{pos:{x:311.2,y:227.65}}}) // Empty 550-573
+            .to({data:{pos:{x:311.2,y:227.65},alpha:0}, duration:13})
+            .set({data:{pos:{x:311.2,y:227.65},alpha:0}}) // Empty 550-573
 
             .set({data:{pos:{x:308.45,y:224.95},scale:{x:1.09999084,y:1.09999084},alpha:0},start:574},shape_68)
             .fromTo({data:{pos:{x:308.65,y:224.9},scale:{x:1.09994507,y:1.09994507},alpha:0.078125},to:{pos:{x:311.1,y:224.9},scale:{x:1.09994507,y:1.09994507},alpha:0.921875},duration:11})
@@ -1314,6 +1312,7 @@ function createAnimation() {
             .set({data:{alpha:0.01171875}})
             .set({data:{alpha:0}})
             .set({data:{alpha:0}}) // Empty 550-573
+
             .fromTo({data:{pos:{x:297.45,y:224.95},scale:{x:1.09999084,y:1.09999084},alpha:0},to:{pos:{x:302.25,y:224.95},scale:{x:1.09999084,y:1.09999084}},start:574,duration:13},shape_70)
             .to({data:{pos:{x:316,y:224.95},scale:{x:1.09999084,y:1.09999084}},duration:37})
             .to({data:{pos:{x:320.85,y:224.95},scale:{x:1.09999084,y:1.09999084},alpha:0},duration:13})
@@ -1427,7 +1426,7 @@ function createAnimation() {
         let shape_60 = new Timeline(true);
         shape_60.set({data: {pos: {x: -375, y: -250}}}, assets.get('image 59'));
         let shape_72 = new Timeline(true);
-        shape_72.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 71'));
+        shape_72.set({data: {pos: {x: 325, y: 225},scale:{x:-1,y:-1}}}, assets.get('image 71'));
         let shape_110 = new Timeline(true);
         shape_110.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 109'));
         let shape_260 = new Timeline(true);
@@ -1446,6 +1445,8 @@ function createAnimation() {
             .set({data:{pos:{x:364.2,y:212.1},alpha:0.19140625}})
             .set({data:{pos:{x:363.45,y:212.35},alpha:0.37109375}})
             .set({data:{pos:{x:362.7,y:212.55},alpha:0.16015625}})
+            .set({data:{pos:{x:361.95,y:212.8},alpha:0.62109375}})
+            .set({data:{pos:{x:361.2,y:213},alpha:0.33984375}})
             .set({data:{pos:{x:360.4,y:213.2},alpha:0.609375}})
             .set({data:{pos:{x:359.65,y:213.45},alpha:0.25}})
             .set({data:{pos:{x:358.9,y:213.65},alpha:0.921875}})
@@ -1512,26 +1513,25 @@ function createAnimation() {
             .set({data:{pos:{x:312.7,y:227.2},alpha:0.0703125}})
             .set({data:{pos:{x:311.2,y:227.65},alpha:0}}) // Empty 550-573
 
-            // Chyba zły kąt
-            .set({data:{pos:{x:341.35,y:293.45},scale:{x:1.09989688,y:1.09989688},angle:199.999337,alpha:0},start:574},shape_72)
-            .fromTo({data:{pos:{x:340.8,y:291.85},scale:{x:1.09872204,y:1.09872204},angle:199.580173,alpha:0.078125},to:{pos:{x:339.35,y:287.9},scale:{x:1.09876608,y:1.09876608},angle:198.302348,alpha:0.4609375},duration:5})
-            .set({data:{pos:{x:339.35,y:287.9},scale:{x:1.09876608,y:1.09876608},angle:198.302348,alpha:0.4609375}})
-            .fromTo({data:{pos:{x:338.9,y:287.2},scale:{x:1.09878344,y:1.09878344},angle:198.047464,alpha:0.5390625},to:{pos:{x:337.5,y:283.15},scale:{x:1.09885569,y:1.09885569},angle:196.769659,alpha:0.921875},duration:5})
-            .set({data:{pos:{x:337.5,y:283.15},scale:{x:1.09885569,y:1.09885569},angle:196.769659,alpha:0.921875}})
-            .fromTo({data:{pos:{x:336.75,y:281.8},scale:{x:1.09888989,y:1.09888989},angle:196.325921},to:{pos:{x:333.2,y:271.25},scale:{x:1.0990858,y:1.0990858},angle:193.072542},duration:12})
-            .to({data:{pos:{x:331.65,y:265.25},scale:{x:1.0991913,y:1.0991913},angle:191.284351},duration:7})
-            .set({data:{pos:{x:331.65,y:265.25},scale:{x:1.0991913,y:1.0991913},angle:191.284351}})
-            .fromTo({data:{pos:{x:331.55,y:264.35},scale:{x:1.09917739,y:1.09917739},angle:191.029935},to:{pos:{x:330.95,y:261.75},scale:{x:1.09923434,y:1.09923434},angle:190.262164},duration:3})
-            .set({data:{pos:{x:330.95,y:261.75},scale:{x:1.09923434,y:1.09923434},angle:190.262164}})
-            .fromTo({data:{pos:{x:330.3,y:260.25},scale:{x:1.09926657,y:1.09926657},angle:189.820054},to:{pos:{x:330.05,y:258.45},scale:{x:1.09930174,y:1.09930174},angle:189.30922},duration:2})
-            .to({data:{pos:{x:329.4,y:254.9},scale:{x:1.09935581,y:1.09935581},angle:188.287554},duration:4})
-            .to({data:{pos:{x:328.5,y:249.5},scale:{x:1.09946266,y:1.09946266},angle:186.756338},duration:6})
-            .set({data:{pos:{x:328.5,y:249.5},scale:{x:1.09946266,y:1.09946266},angle:186.756338}})
-            .fromTo({data:{pos:{x:327.95,y:248},scale:{x:1.09947087,y:1.09947087},angle:186.312883},to:{pos:{x:327.45,y:243.3},scale:{x:1.09950593,y:1.09950593},angle:185.036557,alpha:0.62109375},duration:5})
-            .to({data:{pos:{x:326.85,y:237.75},scale:{x:1.09962183,y:1.09962183},angle:183.505216,alpha:0.1484375},duration:6})
-            .set({data:{pos:{x:326.85,y:237.75},scale:{x:1.09962183,y:1.09962183},angle:183.505216,alpha:0.1484375}})
-            .set({data:{pos:{x:326.4,y:236.1},scale:{x:1.09963858,y:1.09963858},angle:183.062388,alpha:0.078125}})
-            .set({data:{pos:{x:326.35,y:235.2},scale:{x:1.09970857,y:1.09970857},angle:182.80746,alpha:0}}) // Empty 638-674
+            .set({data:{pos:{x:341.35,y:293.45},scale:{x:1.09989688,y:1.09989688},angle:-199.999337,alpha:0},start:574},shape_72)
+            .fromTo({data:{pos:{x:340.8,y:291.85},scale:{x:1.09872204,y:1.09872204},angle:-199.580173,alpha:0.078125},to:{pos:{x:339.35,y:287.9},scale:{x:1.09876608,y:1.09876608},angle:-198.302348,alpha:0.4609375},duration:5})
+            .set({data:{pos:{x:339.35,y:287.9},scale:{x:1.09876608,y:1.09876608},angle:-198.302348,alpha:0.4609375}})
+            .fromTo({data:{pos:{x:338.9,y:287.2},scale:{x:1.09878344,y:1.09878344},angle:-198.047464,alpha:0.5390625},to:{pos:{x:337.5,y:283.15},scale:{x:1.09885569,y:1.09885569},angle:-196.769659,alpha:0.921875},duration:5})
+            .set({data:{pos:{x:337.5,y:283.15},scale:{x:1.09885569,y:1.09885569},angle:-196.769659,alpha:0.921875}})
+            .fromTo({data:{pos:{x:336.75,y:281.8},scale:{x:1.09888989,y:1.09888989},angle:-196.325921},to:{pos:{x:333.2,y:271.25},scale:{x:1.0990858,y:1.0990858},angle:-193.072542},duration:12})
+            .to({data:{pos:{x:331.65,y:265.25},scale:{x:1.0991913,y:1.0991913},angle:-191.284351},duration:7})
+            .set({data:{pos:{x:331.65,y:265.25},scale:{x:1.0991913,y:1.0991913},angle:-191.284351}})
+            .fromTo({data:{pos:{x:331.55,y:264.35},scale:{x:1.09917739,y:1.09917739},angle:-191.029935},to:{pos:{x:330.95,y:261.75},scale:{x:1.09923434,y:1.09923434},angle:-190.262164},duration:3})
+            .set({data:{pos:{x:330.95,y:261.75},scale:{x:1.09923434,y:1.09923434},angle:-190.262164}})
+            .fromTo({data:{pos:{x:330.3,y:260.25},scale:{x:1.09926657,y:1.09926657},angle:-189.820054},to:{pos:{x:330.05,y:258.45},scale:{x:1.09930174,y:1.09930174},angle:-189.30922},duration:2})
+            .to({data:{pos:{x:329.4,y:254.9},scale:{x:1.09935581,y:1.09935581},angle:-188.287554},duration:4})
+            .to({data:{pos:{x:328.5,y:249.5},scale:{x:1.09946266,y:1.09946266},angle:-186.756338},duration:6})
+            .set({data:{pos:{x:328.5,y:249.5},scale:{x:1.09946266,y:1.09946266},angle:-186.756338}})
+            .fromTo({data:{pos:{x:327.95,y:248},scale:{x:1.09947087,y:1.09947087},angle:-186.312883},to:{pos:{x:327.45,y:243.3},scale:{x:1.09950593,y:1.09950593},angle:-185.036557,alpha:0.62109375},duration:5})
+            .to({data:{pos:{x:326.85,y:237.75},scale:{x:1.09962183,y:1.09962183},angle:-183.505216,alpha:0.1484375},duration:6})
+            .set({data:{pos:{x:326.85,y:237.75},scale:{x:1.09962183,y:1.09962183},angle:-183.505216,alpha:0.1484375}})
+            .set({data:{pos:{x:326.4,y:236.1},scale:{x:1.09963858,y:1.09963858},angle:-183.062388,alpha:0.078125}})
+            .set({data:{pos:{x:326.35,y:235.2},scale:{x:1.09970857,y:1.09970857},angle:-182.80746,alpha:0}}) // Empty 638-674
 
             .set({data:{pos:{x:323.95,y:225},alpha:0},start:674},shape_84)
             .fromTo({data:{pos:{x:326.35,y:224.85},scale:{x:1.00080872,y:1.00080872},alpha:0.078125},to:{pos:{x:326.35,y:223.7},scale:{x:1.00805664,y:1.00805664},alpha:0.76953125},duration:9})
@@ -1567,8 +1567,8 @@ function createAnimation() {
 
             .fromTo({data:{pos:{x:355.95,y:224.95},scale:{x:1.09999084,y:1.09999084},alpha:0},to:{pos:{x:349.75,y:224.95},scale:{x:1.09999084,y:1.09999084}},start:974,duration:13},shape_110)
             .to({data:{pos:{x:332.1,y:224.95},scale:{x:1.09999084,y:1.09999084}},duration:37})
-            .to({data:{pos:{x:325.95,y:224.95},scale:{x:1.09999084,y:1.09999084}},duration:13})
-            .set({data:{pos:{x:325.95,y:224.95},scale:{x:1.09999084,y:1.09999084}}}) // Empty 1038-2492
+            .to({data:{pos:{x:325.95,y:224.95},scale:{x:1.09999084,y:1.09999084},alpha:0},duration:13})
+            .set({data:{pos:{x:325.95,y:224.95},scale:{x:1.09999084,y:1.09999084},alpha:0}}) // Empty 1038-2492
 
             .fromTo({data:{pos:{x:293.65,y:225},alpha:0},to:{pos:{x:295.45,y:225}},start:2493,duration:6},shape_260)
             .to({data:{pos:{x:295.45,y:225}},duration:6})
@@ -1634,7 +1634,7 @@ function createAnimation() {
     // Layer 8
     {
         let shape_258 = new Timeline(true);
-        shape_258.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 57'));    
+        shape_258.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 257'));    
 
         mainTl.fromTo({data:{pos:{x:289.8,y:225},alpha:0},to:{pos:{x:291.9,y:225}},start:2480,duration:7,layer:8},shape_258)
             .to({data:{pos:{x:293.65,y:225}},duration:6})

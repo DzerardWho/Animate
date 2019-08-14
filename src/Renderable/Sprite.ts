@@ -10,9 +10,8 @@ export class Sprite extends Renderable {
 	texture: WebGLTexture;
 	textureCoords: WebGLBuffer;
 	loop: boolean;
-	blendFunc: number;
 
-	constructor(base: Base, img: ImageData | Spritesheet, transparent: boolean, index?: string | number) {
+	constructor(base: Base, img: ImageData | Spritesheet, index?: string | number) {
 		if (!(img instanceof Spritesheet)) {
 			super(base, img.width, img.height);
 
@@ -31,12 +30,12 @@ export class Sprite extends Renderable {
 			this.gl.texParameteri(
 				this.gl.TEXTURE_2D,
 				this.gl.TEXTURE_MIN_FILTER,
-				this.gl.LINEAR
+				this.gl.NEAREST
 			);
 			this.gl.texParameteri(
 				this.gl.TEXTURE_2D,
 				this.gl.TEXTURE_MAG_FILTER,
-				this.gl.LINEAR
+				this.gl.NEAREST
 			);
 			this.gl.texImage2D(
 				this.gl.TEXTURE_2D,
@@ -62,11 +61,6 @@ export class Sprite extends Renderable {
 
 		this.loop = true;
 		this.program = base.defaultSpriteProgram;
-		if (transparent) {
-			this.blendFunc = this.gl.ONE;
-		} else {
-			this.blendFunc = this.gl.SRC_ALPHA;
-		}
 
 		this.getProgramData([
 			// Atribs
@@ -84,10 +78,6 @@ export class Sprite extends Renderable {
 	draw(matrix: Matrix, alpha: number) {
 		if (this.base.lastUsedProgram !== this.program) {
 			this.base.lastUsedProgram = this.program;
-		}
-
-		if (this.base.lastUsedBlendFunc !== this.blendFunc){
-			this.base.lastUsedBlendFunc = this.blendFunc;
 		}
 
 		if (this.base.lastUsedTexture !== this.texture){

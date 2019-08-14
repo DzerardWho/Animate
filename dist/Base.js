@@ -340,7 +340,9 @@ const dfs = `precision mediump float;
 uniform vec4 uColor;
 
 void main(){
-    gl_FragColor = uColor;
+    vec4 color = uColor;
+    color.rgb *= color.a;
+    gl_FragColor = color;
 }`;
 const dsvs = `precision mediump float;
 
@@ -363,7 +365,9 @@ uniform sampler2D sampler;
 
 void main(){
     vec4 color = texture2D(sampler, f_texCoord);
-	gl_FragColor = vec4(color.rgb, color.a * alpha);
+    color.a *= alpha;
+    color.rgb *= color.a;
+	gl_FragColor = color;
 }`;
 
 class Renderable {
@@ -500,8 +504,8 @@ class Spritesheet {
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
         this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
         let tmp, x, y, w, h;
         for (let i in data) {
@@ -528,8 +532,7 @@ class Spritesheet {
                 width: data[i].width,
                 height: data[i].height,
                 pad_x: data[i].pad_x || 0,
-                pad_y: data[i].pad_y || 0,
-                transparent: data[i].transparent
+                pad_y: data[i].pad_y || 0
             });
         }
     }
@@ -539,15 +542,15 @@ class Spritesheet {
 }
 
 class Sprite extends Renderable {
-    constructor(base, img, transparent, index) {
+    constructor(base, img, index) {
         if (!(img instanceof Spritesheet)) {
             super(base, img.width, img.height);
             this.texture = this.gl.createTexture();
             this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
             this.textureCoords = this.unitBuffer;
         }
@@ -563,12 +566,6 @@ class Sprite extends Renderable {
         }
         this.loop = true;
         this.program = base.defaultSpriteProgram;
-        if (transparent) {
-            this.blendFunc = this.gl.ONE;
-        }
-        else {
-            this.blendFunc = this.gl.SRC_ALPHA;
-        }
         this.getProgramData([
             'aPosition',
             'aTextureCoords'
@@ -581,9 +578,6 @@ class Sprite extends Renderable {
     draw(matrix, alpha) {
         if (this.base.lastUsedProgram !== this.program) {
             this.base.lastUsedProgram = this.program;
-        }
-        if (this.base.lastUsedBlendFunc !== this.blendFunc) {
-            this.base.lastUsedBlendFunc = this.blendFunc;
         }
         if (this.base.lastUsedTexture !== this.texture) {
             this.base.lastUsedTexture = this.texture;
@@ -799,7 +793,7 @@ class AssetMenager {
         for (let asset of assets) {
             switch (asset.type) {
                 case 'image':
-                    this.assets[asset.id] = new Sprite(this.base, asset.result, asset.transparent);
+                    this.assets[asset.id] = new Sprite(this.base, asset.result);
                     break;
                 default:
                     break;
@@ -820,14 +814,14 @@ class AssetMenager {
         if (!sp) {
             throw new Error(`There is no image named "${id}" in spritesheets.`);
         }
-        return (this.assets[name] = new Sprite(this.base, this.spritesheets[sp], k.transparent, id));
+        return (this.assets[name] = new Sprite(this.base, this.spritesheets[sp], id));
     }
     createAllSprites() {
         let s;
         for (let i in this.spritesheets) {
             s = this.spritesheets[i];
             for (let id in this.spritesheets[i].sprites) {
-                this.assets[id] = new Sprite(this.base, s, s.sprites[id].transparent, id);
+                this.assets[id] = new Sprite(this.base, s, id);
             }
         }
     }
@@ -852,7 +846,9 @@ class Renderer {
         this.backgroundColor = bgColor;
         this.render = this.render.bind(this);
         this.update = this.update.bind(this);
-        this.changeBlendFunc(this.gl.ONE);
+        if (!base.debug) {
+            this.debugIntervals = () => { };
+        }
     }
     play() {
         if (!this.isPlaying) {
@@ -871,6 +867,10 @@ class Renderer {
             this.isPlaying = false;
         }
     }
+    debugIntervals() {
+        if (this.timeToNextUpdate <= 37 || this.timeToNextUpdate >= 43)
+            console.log(this.timeToNextUpdate);
+    }
     async update() {
         if (this.isPlaying) {
             ++this.frame;
@@ -878,8 +878,7 @@ class Renderer {
             requestAnimationFrame(this.render);
             this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
             setTimeout(this.update, this.timeToNextUpdate);
-            if (this.timeToNextUpdate <= 37 || this.timeToNextUpdate >= 43)
-                console.log(this.timeToNextUpdate);
+            this.debugIntervals();
             this.lastUpdate = performance.now();
         }
     }
@@ -901,9 +900,6 @@ class Renderer {
     clear() {
         this.gl.clearColor(this.backgroundColor.r, this.backgroundColor.g, this.backgroundColor.b, this.backgroundColor.a);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-    }
-    changeBlendFunc(func) {
-        this.gl.blendFunc(func, this.gl.ONE_MINUS_SRC_ALPHA);
     }
 }
 
@@ -940,7 +936,7 @@ class Base {
             document.getElementById(canvas_id).appendChild(this.canvas);
             document.getElementById(canvas_id).appendChild(this.textCanvas);
         }
-        this.gl = (this.canvas.getContext(webgl2 ? "webgl2" : "webgl", { alpha: false, depth: false }));
+        this.gl = (this.canvas.getContext(webgl2 ? "webgl2" : "webgl", { depth: false }));
         if (!this.gl) {
             console.error(`Brak wsparcia dla ${webgl2 ? "webgl2" : "webgl"}.`);
             return;
@@ -948,11 +944,13 @@ class Base {
         if (debug) {
             this.gl = createDebugGl(this.gl);
         }
+        this.debug = debug;
         this.setCanvasSize(width, height);
         this.lastUsedProgram = null;
         this.renderer = new Renderer(this, fps, width, height, bgC instanceof Color ? bgC : new Color(bgC));
         this.gl.frontFace(this.gl.CW);
         this.gl.enable(this.gl.BLEND);
+        this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
         this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
         this.defaultShapeProgram = this.newProgram();
         this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
@@ -1040,13 +1038,6 @@ class Base {
     }
     pause() {
         this.renderer.pause();
-    }
-    get lastUsedBlendFunc() {
-        return this._lastUsedBlendFunc;
-    }
-    set lastUsedBlendFunc(value) {
-        this._lastUsedBlendFunc = value;
-        this.renderer.changeBlendFunc(value);
     }
     get lastUsedProgram() {
         return this._lastUsedProgram;

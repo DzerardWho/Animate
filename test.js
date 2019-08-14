@@ -14,8 +14,8 @@ function init() {
         headimg.onload = () => {
             t = new Rectangle(b, 500, 100, [50, 160, 99]);
             t2 = new Rectangle(b, 500, 100, [224, 33, 141]);
-            body = new Sprite(b, img, true);
-            head = new Sprite(b, headimg, true);
+            body = new Sprite(b, img);
+            head = new Sprite(b, headimg);
 
             john = new Timeline();
             john.createLayer();

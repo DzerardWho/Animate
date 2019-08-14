@@ -33,7 +33,10 @@ export class Renderer {
         this.backgroundColor = bgColor;
         this.render = this.render.bind(this);
         this.update = this.update.bind(this);
-        this.changeBlendFunc(this.gl.ONE);
+
+        if (!base.debug) {
+            this.debugIntervals = () => {};
+        }
     }
 
     play() {
@@ -56,6 +59,11 @@ export class Renderer {
         }
     }
 
+    debugIntervals(){
+        if (this.timeToNextUpdate <= 37 || this.timeToNextUpdate >= 43)
+            console.log(this.timeToNextUpdate);
+    }
+
     async update() {
         if (this.isPlaying) {
             ++this.frame;
@@ -64,9 +72,7 @@ export class Renderer {
             // this.timeToNextUpdate = this.timing;
             this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
             setTimeout(this.update, this.timeToNextUpdate);
-            if (this.timeToNextUpdate <= 37 || this.timeToNextUpdate >= 43)
-                console.log(this.timeToNextUpdate);
-            // console.log(this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing));
+            this.debugIntervals();
             this.lastUpdate = performance.now();
         }
     }
@@ -96,9 +102,5 @@ export class Renderer {
             this.backgroundColor.a
         );
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-    }
-
-    changeBlendFunc(func: number) {
-        this.gl.blendFunc(func, this.gl.ONE_MINUS_SRC_ALPHA);
     }
 }

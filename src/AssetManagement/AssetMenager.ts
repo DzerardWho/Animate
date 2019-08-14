@@ -48,7 +48,7 @@ export class AssetMenager {
         for (let asset of assets) {
             switch (asset.type) {
                 case 'image':
-                    this.assets[asset.id] = new Sprite(this.base, asset.result, asset.transparent);
+                    this.assets[asset.id] = new Sprite(this.base, asset.result);
                     break;
                 default:
                     // TODO: reszta zasobów
@@ -73,15 +73,15 @@ export class AssetMenager {
             throw new Error(`There is no image named "${id}" in spritesheets.`);
         }
 
-        return (this.assets[name] = new Sprite(this.base, this.spritesheets[sp], k.transparent, id));
+        return (this.assets[name] = new Sprite(this.base, this.spritesheets[sp], id));
     }
 
     createAllSprites() {
-        let s;
+        let s: Spritesheet | ImageData;
         for (let i in this.spritesheets) {
             s = this.spritesheets[i];
             for (let id in this.spritesheets[i].sprites) {
-                this.assets[id] = new Sprite(this.base, s, s.sprites[id].transparent, id);
+                this.assets[id] = new Sprite(this.base, s, id);
             }
         }
     }

@@ -19,7 +19,8 @@ export class Base {
 
 	_lastUsedProgram: WebGLProgram;
 	_lastUsedTexture: WebGLTexture;
-	_lastUsedBlendFunc: number;
+
+	debug: boolean;
 
 	constructor(
 		debug: boolean = false,
@@ -40,7 +41,7 @@ export class Base {
 		}
 
 		this.gl = <WebGLRenderingContext>(
-			this.canvas.getContext(webgl2 ? "webgl2" : "webgl", { alpha: false, depth: false })
+			this.canvas.getContext(webgl2 ? "webgl2" : "webgl", { depth: false })
 		);
 
 		if (!this.gl) {
@@ -51,6 +52,7 @@ export class Base {
 		if (debug) {
 			this.gl = createDebugGl(this.gl);
 		}
+		this.debug = debug;
 
 		this.setCanvasSize(width, height);
 		this.lastUsedProgram = null;
@@ -59,6 +61,7 @@ export class Base {
 
 		this.gl.frontFace(this.gl.CW);
 		this.gl.enable(this.gl.BLEND);
+		this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
 		this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
 		this.defaultShapeProgram = this.newProgram();
@@ -162,15 +165,6 @@ export class Base {
 
 	pause() {
 		this.renderer.pause();
-	}
-
-	get lastUsedBlendFunc() {
-		return this._lastUsedBlendFunc;
-	}
-
-	set lastUsedBlendFunc(value: number) {
-		this._lastUsedBlendFunc = value;
-		this.renderer.changeBlendFunc(value);
 	}
 
 	get lastUsedProgram() {

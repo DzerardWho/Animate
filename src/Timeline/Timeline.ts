@@ -151,6 +151,19 @@ export class Timeline {
         return this;
     }
 
+    toSet(data: elementData, dur?:number, obj?: timeElement){
+        this.to(data, obj);
+        data.duration = dur;
+        this.set(data);
+    }
+
+    fromToSet(data: elementData, dur?:number, obj?: timeElement){
+        this.fromTo(data, obj);
+        data.data = data.to;
+        data.duration = dur;
+        this.set(data);
+    }
+
     draw(matrix: Matrix, alpha: number = 1, frame: number) {
         if (alpha) {
             let timeFrame: Timeframe | null, _frame;
