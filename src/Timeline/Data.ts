@@ -34,7 +34,7 @@ export class Data {
                 if (data.transformationPoint.x) {
                     this.transformationPoint.x = data.transformationPoint.x;
                 }
-                if (data.scale.y) {
+                if (data.transformationPoint.y) {
                     this.transformationPoint.y = data.transformationPoint.y;
                 }
             }

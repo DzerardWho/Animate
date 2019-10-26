@@ -1,14 +1,14 @@
-export const dvs = `precision mediump float;
+export const colorShapeVertexShader = `precision mediump float;
 
-attribute vec2 aPosition;
+attribute vec2 aPos;
 
-uniform mat3 transMatrix;
+uniform mat3 uTransMatrix;
 
 void main(){
-    gl_Position = vec4((transMatrix * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
+    gl_Position = vec4((uTransMatrix * vec3(aPos, 1.0)).xy, 0.0, 1.0);
 }`;
 
-export const dfs = `precision mediump float;
+export const colorShapeFragmentShader = `precision mediump float;
 
 uniform vec4 uColor;
 
@@ -18,29 +18,82 @@ void main(){
     gl_FragColor = color;
 }`;
 
-export const dsvs = `precision mediump float;
+export const spriteVertexShader = `precision mediump float;
 
-attribute vec2 aPosition;
-attribute vec2 aTextureCoords;
+attribute vec2 aPos;
+attribute vec2 aTexCoords;
 
-uniform mat3 transMatrix;
+uniform mat3 uTransMatrix;
 
-varying vec2 f_texCoord;
+varying vec2 vTexCoord;
 
 void main(){
-    f_texCoord = aTextureCoords;
-    gl_Position = vec4((transMatrix * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
+    vTexCoord = aTexCoords;
+    gl_Position = vec4((uTransMatrix * vec3(aPos, 1.0)).xy, 0.0, 1.0);
 }`;
 
-export const dsfs = `precision mediump float;
+export const spriteFragmentShader = `precision mediump float;
 
-varying vec2 f_texCoord;
-uniform float alpha;
-uniform sampler2D sampler;
+varying vec2 vTexCoord;
+uniform float uAlpha;
+uniform sampler2D uSampler;
 
 void main(){
-    vec4 color = texture2D(sampler, f_texCoord);
-    color.a *= alpha;
+    vec4 color = texture2D(uSampler, vTexCoord);
+    color.a *= uAlpha;
+    color.rgb *= color.a;
+	gl_FragColor = color;
+}`;
+
+export const timelineVertexShader = `precision mediump float;
+
+attribute vec2 aPos;
+
+uniform mat3 uTransMatrix;
+
+varying vec2 vTexCoord;
+
+void main(){
+    vTexCoord = aPos;
+    gl_Position = vec4((uTransMatrix * vec3(aPos, 1.0)).xy, 0.0, 1.0);
+}`;
+
+export const colorTimelineFragmentShader = `precision mediump float;
+
+varying vec2 vTexCoord;
+uniform vec4 uColor;
+uniform sampler2D uSampler;
+
+void main(){
+    vec4 color = uColor;
+    color *= texture2D(uSampler, vTexCoord).a;
+    gl_FragColor = color;
+}`;
+
+export const maskTimelineFragmentShader = `precision mediump float;
+
+varying vec2 vTexCoord;
+uniform float uAlpha;
+uniform sampler2D uSampler;
+uniform sampler2D uMask;
+
+void main(){
+    vec4 color = texture2D(uSampler, vTexCoord);
+    color.a *= uAlpha * texture2D(uMask, vTexCoord).a;
+    color.rgb *= color.a;
+	gl_FragColor = color;
+}`;
+
+export const colorAndMaskTimelineFragmentShader = `precision mediump float;
+
+varying vec2 vTexCoord;
+uniform vec4 uColor;
+uniform sampler2D uSampler;
+uniform sampler2D uMask;
+
+void main(){
+    vec4 color = texture2D(uSampler, vTexCoord);
+    color.a *= uColor.a * texture2D(uMask, vTexCoord).r;
     color.rgb *= color.a;
 	gl_FragColor = color;
 }`;

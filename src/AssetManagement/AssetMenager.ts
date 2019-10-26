@@ -4,7 +4,7 @@ import { Rectangle } from "../Renderable/Rectangle";
 import { Timeline } from "../Timeline/Timeline";
 import { Base } from "../Base";
 import { AssetLoader } from "./AssetLoader";
-import { Item, fileExt } from "./Item";
+import { Item, fileExt, _Item } from "./Item";
 
 interface Asset {
     [propname: string]: Sprite | Spritesheet | Rectangle | Timeline;
@@ -25,7 +25,7 @@ export class AssetMenager {
     loadAssets(assetLoader: AssetLoader) {
         let assets = assetLoader.downloaded.splice(0, assetLoader.downloaded.length);
 
-        let img: Item, data;
+        let img: _Item|Item, data;
         for (let spritesheet of assets.filter((v) => { return v.type === 'spritesheet' })) {
             assets.splice(assets.indexOf(spritesheet), 1);
             for (let sheet in spritesheet.result) {

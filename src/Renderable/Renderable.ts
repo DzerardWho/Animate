@@ -1,13 +1,12 @@
 import { Base } from '../Base'
 import { vec2 } from '../types';
+// import { ProgramInfo, BufferInfo } from '../twgl.js/dist/4.x/twgl';
+import { NOOP } from '../NOOP';
 
 export class Renderable {
-	attribs: Object;
-	uniforms: Object;
-
-	// shapeBuffer: WebGLBuffer;
 	unitBuffer: WebGLBuffer;
-	program: WebGLProgram;
+	bufferInfo: BufferInfo;
+	program: ProgramInfo;
 	gl: WebGLRenderingContext;
 	base: Base;
 	loop: boolean;
@@ -15,6 +14,8 @@ export class Renderable {
 	height: number;
 	
 	padding: vec2;
+
+	update: () => void;
 
 	constructor(
 		base: Base,
@@ -24,29 +25,11 @@ export class Renderable {
 		this.base = base;
 		this.gl = base.gl;
 		this.loop = true;
-		this.unitBuffer = base.unitBuffer;
+		// this.unitBuffer = base.unitBuffer;
 
-		this.attribs = {};
-		this.uniforms = {};
 		this.width = w;
 		this.height = h;
-	}
 
-	getProgramData(attribs: Array<string>, uniforms: Array<string>){
-		if (!this.program){
-			return;
-		}
-		for (let i of attribs){
-			this.attribs[i] = this.gl.getAttribLocation(
-				this.program,
-				i
-			);
-		}
-		for (let i of uniforms){
-			this.uniforms[i] = this.gl.getUniformLocation(
-				this.program,
-				i
-			);
-		}
+		this.update = NOOP;
 	}
 }

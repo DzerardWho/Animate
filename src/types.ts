@@ -1,6 +1,7 @@
 import { Rectangle } from './Renderable/Rectangle';
 import { Sprite } from './Renderable/Sprite';
 import { Timeline } from './Timeline/Timeline';
+import { TimelineInstance } from './Timeline/TimelineInstance';
 
 export interface vec2 {
 	x: number;
@@ -24,7 +25,15 @@ export interface _Data {
 
 export type Matrix = Array<number> | Float32Array;
 
-export type timeElement = Timeline | Sprite | Rectangle;
+export type timeElement = Timeline | Sprite | Rectangle | TimelineInstance;
+
+export interface timelineElement {
+    width: number;
+    height: number;
+    padding: vec2;
+    loop: boolean;
+    duration: number;
+}
 
 export interface elementData {
     data?: _Data;

@@ -14,7 +14,7 @@ export interface _Item {
     id: string;
     fileFormat?: string;
     type?: string;
-    transparent?: boolean;
+    result?: any;
 }
 
 export class Item implements _Item {
@@ -22,7 +22,6 @@ export class Item implements _Item {
     id: string;
     result: any;
     type: string;
-    transparent?: boolean;
     fileFormat: string;
 
     constructor(id: string, src: string, fileFormat?: string, type?: string, transparent?: boolean) {
@@ -49,7 +48,7 @@ export class Item implements _Item {
                     this.result = new Audio();
                     break;
                 case 'image':
-                    this.result = new Image();
+                    this.result = document.createElement('img');
                     break;
                 default:
                     break;
@@ -60,7 +59,6 @@ export class Item implements _Item {
                 case 'webp':
                 case 'jpg':
                 case 'jpeg':
-                    this.transparent = transparent || false;
                     this.type = 'image';
                     this.result = new Image();
                     break;

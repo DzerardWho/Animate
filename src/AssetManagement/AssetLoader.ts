@@ -1,18 +1,30 @@
 import { _Spritesheet, _Sprite } from "./Spritesheet";
 import { Item, _Item } from './Item'
 
+// Lenovo ideapad 720s - 13rr
 export class AssetLoader {
-    downloadQueue: Array<Item>;
-    downloaded: Array<Item>;
+    downloadQueue: Array<_Item>;
+    downloaded: Array<_Item>;
     errors: Array<any>;
     toDownload: number;
     maxRetries: number;
+    loaderDiv: HTMLElement;
+    xml: boolean;
 
-    constructor(maxRetries: number = 3) {
+
+    constructor(xml: boolean = false, maxRetries: number = 3) {
         this.maxRetries = maxRetries;
         this.downloadQueue = [];
         this.downloaded = [];
         this.errors = [];
+        this.loaderDiv = document.getElementById('loader');
+        this.xml = xml;
+
+        if (!this.loaderDiv) {
+            this.loaderDiv = document.createElement('div');
+            this.loaderDiv.style.display = 'none';
+            document.body.appendChild(this.loaderDiv);
+        }
     }
 
     download(mode: number = 0) {
@@ -25,65 +37,81 @@ export class AssetLoader {
             }
 
             for (let element of downloadQueue) {
-                let request = new XMLHttpRequest();
+                if (!this.xml && element.type === 'image') {
+                    element.result.onload = () => {
+                        this.loaderDiv.appendChild(element.result);
 
-                if (element.type === 'image') {
-                    request.responseType = 'blob';
-                }
+                        this.downloaded.push(element);
+                        downloadQueue.splice(downloadQueue.indexOf(element), 1);
+                        if (this.isDone()) {
+                            resolve(this.downloaded);
+                        }
+                    }
+                    element.result.src = element.src;
+                } else {
+                    let request = new XMLHttpRequest();
 
-                request.onload = async () => {
-                    if (request.status !== 200) {
-                        this.errors.push(element);
+                    if (element.type === 'image') {
+                        request.responseType = 'blob';
+                    } else if (element.type === 'audio') {
+                        request.responseType = 'arraybuffer';
+                    }
+
+                    request.onload = async () => {
+                        if (request.status !== 200) {
+                            this.errors.push(element);
+                            if (this.isDone()) {
+                                resolve(this.downloaded);
+                            }
+                        }
+
+                        switch (element.type) {
+                            case 'image':
+                                await new Promise((resolve) => {
+                                    element.result.src = URL.createObjectURL(new Blob([request.response], { type: `image/${element.fileFormat}` }));
+                                    element.result.onload = () => {
+                                        URL.revokeObjectURL(element.result.src)
+                                        this.loaderDiv.appendChild(element.result);
+                                        resolve();
+                                    };
+                                })
+                                break;
+                            case 'audio':
+                                await new Promise((resolve) => {
+                                    element.result.src = URL.createObjectURL(new Blob([request.response], { type: `audio/${element.fileFormat}` }));
+                                    element.result.onload = () => {
+                                        URL.revokeObjectURL(element.result.src)
+                                        resolve();
+                                    };
+                                })
+                                break;
+                            case 'json':
+                            case 'spritesheet':
+                                element.result = JSON.parse(request.responseText);
+                                break;
+                            case 'js':
+                                element.result = request.responseText;
+                                break;
+                            case 'anime':
+                                let t = new DOMParser();
+                                element.result = t.parseFromString(request.responseText, 'text/xml');
+                        }
+
+                        this.downloaded.push(element);
+                        downloadQueue.splice(downloadQueue.indexOf(element), 1);
+
                         if (this.isDone()) {
                             resolve(this.downloaded);
                         }
                     }
 
-                    switch (element.type) {
-                        case 'image':
-                            await new Promise((resolve) => {
-                                element.result.src = URL.createObjectURL(new Blob([request.response], { type: `image/${element.fileFormat}` }));
-                                element.result.onload = () => {
-                                    URL.revokeObjectURL(element.result.src)
-                                    resolve();
-                                };
-                            })
-                            break;
-                        case 'audio':
-                            await new Promise((resolve) => {
-                                element.result.src = URL.createObjectURL(new Blob([request.response], { type: `audio/${element.fileFormat}` }));
-                                element.result.onload = () => {
-                                    URL.revokeObjectURL(element.result.src)
-                                    resolve();
-                                };
-                            })
-                            break;
-                        case 'json':
-                        case 'spritesheet':
-                            element.result = JSON.parse(request.responseText);
-                            break;
-                        case 'js':
-                            element.result = request.responseText;
-                            break;
-                        case 'anime':
-                            let t = new DOMParser();
-                            element.result = t.parseFromString(request.responseText, 'text/xml');
+                    request.onerror = () => {
+                        reject(new Error(`Error while downloading file: ${request.statusText}`));
                     }
 
-                    this.downloaded.push(element);
-                    downloadQueue.splice(downloadQueue.indexOf(element), 1);
-
-                    if (this.isDone()) {
-                        resolve(this.downloaded);
-                    }
+                    request.open('GET', element.src, true);
+                    request.send();
                 }
-
-                request.onerror = () => {
-                    reject(new Error(`Error while downloading file: ${request.statusText}`));
-                }
-
-                request.open('GET', element.src, true);
-                request.send();
             }
         });
     }
@@ -107,7 +135,7 @@ export class AssetLoader {
 
     pushManifest(manifest: Array<_Item>) {
         for (let i of manifest) {
-            this.pushFile(i.id, i.src, i.fileFormat, i.type, i.transparent);
+            this.pushFile(i.id, i.src, i.fileFormat, i.type);
         }
     }
 

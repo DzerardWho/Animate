@@ -164,13 +164,34 @@ export class Timeline {
         this.set(data);
     }
 
+    update(frame: number) {
+        let timeFrame, _frame;
+        if (this.loop) {
+            frame %= this.duration;
+        } else if (frame >= this.duration) {
+            frame = this.duration - 1;
+        }
+        this.layers.forEach((layer) => {
+            timeFrame = layer.findByFrame(frame);
+            if (!timeFrame) {
+                return;
+            }
+            _frame = frame - timeFrame.start;
+            timeFrame.elements.forEach((element) => {
+                element.update(_frame);
+            });
+        });
+    }
+
     draw(matrix: Matrix, alpha: number = 1, frame: number) {
         if (alpha) {
             let timeFrame: Timeframe | null, _frame;
+            if (this.loop) {
+                frame %= this.duration;
+            } else if (frame >= this.duration) {
+                frame = this.duration - 1;
+            }
             this.layers.forEach((layer) => {
-                if (this.loop) {
-                    frame %= this.duration;
-                }
                 timeFrame = layer.findByFrame(frame);
                 if (!timeFrame) {
                     return;

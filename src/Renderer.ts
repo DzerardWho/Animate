@@ -3,6 +3,7 @@ import { createProjection } from './Matrix'
 import { Base } from './Base'
 import { Color } from './Color'
 import { Matrix } from './types';
+import { NOOP } from './NOOP';
 
 export class Renderer {
     gl: WebGLRenderingContext;
@@ -16,6 +17,7 @@ export class Renderer {
     projectionMatrix: Matrix;
     backgroundColor: Color;
     frameUpdated: boolean;
+    lastFrameRequest: number;
 
     constructor(base: Base, fps: number, width: number, height: number, bgColor: Color) {
         if (fps <= 0) {
@@ -27,6 +29,7 @@ export class Renderer {
         this.timeToNextUpdate = this.timing;
         this.lastUpdate = 0;
         this.frame = 0;
+        this.lastFrameRequest = null;
         this.mainTimeline = null;
         this.isPlaying = false;
         this.projectionMatrix = createProjection(width, height);
@@ -35,7 +38,7 @@ export class Renderer {
         this.update = this.update.bind(this);
 
         if (!base.debug) {
-            this.debugIntervals = () => {};
+            this.debugIntervals = NOOP;
         }
     }
 
@@ -65,33 +68,36 @@ export class Renderer {
     }
 
     async update() {
-        if (this.isPlaying) {
+        // if (this.isPlaying) {
             ++this.frame;
             this.frameUpdated = true;
-            requestAnimationFrame(this.render);
+            // cancelAnimationFrame(this.lastFrameRequest);
+            this.lastFrameRequest = requestAnimationFrame(this.render);
             // this.timeToNextUpdate = this.timing;
             this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
             setTimeout(this.update, this.timeToNextUpdate);
             this.debugIntervals();
             this.lastUpdate = performance.now();
-        }
+            this.mainTimeline.update(this.frame);
+        // }
     }
 
     async render() {
         if (!this.mainTimeline) {
             throw new Error("There is nothing to render (mainTimeline isn't set)");
         }
-        if (!(this.frameUpdated && this.isPlaying)) {
+        // if (!(this.frameUpdated && this.isPlaying)) {
+        if (!(this.frameUpdated)) {
             return;
         }
         // console.log('render');
         this.frameUpdated = false;
         this.clear();
         this.mainTimeline.draw(this.projectionMatrix, 1, this.frame);
-        if (!this.mainTimeline.loop && this.frame >= this.mainTimeline.duration - 1){
-            this.pause();
-            return;
-        }
+        // if (!this.mainTimeline.loop && this.frame >= this.mainTimeline.duration - 1){
+        //     this.pause();
+        //     return;
+        // }
     }
 
     clear() {

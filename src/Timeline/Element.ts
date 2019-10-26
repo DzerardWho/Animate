@@ -26,6 +26,10 @@ export class Element {
         this.continueFrom = continueFromFrame || 0;
     }
 
+    update(frame: number) {
+        this.object.update(frame);
+    }
+
     draw(parentMatrix: Matrix, alpha: number, frame: number, duration: number) {
         let progress;
         frame += this.continueFrom;

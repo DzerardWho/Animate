@@ -33,44 +33,19 @@ export interface _Spritesheet {
 }
 
 export class Spritesheet {
+    base: Base;
     sprites: _Spritesheet;
-    texture: WebGLTexture;
+    private _texture: WebGLTexture;
     gl: WebGLRenderingContext;
+    src: HTMLImageElement | ImageData;
 
     constructor(base: Base, data: Data, img: ImageData) {
+        this.base = base;
         this.gl = base.gl;
         this.sprites = {};
 
-        this.texture = this.gl.createTexture();
-        this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-        this.gl.texParameteri(
-            this.gl.TEXTURE_2D,
-            this.gl.TEXTURE_WRAP_S,
-            this.gl.CLAMP_TO_EDGE
-        );
-        this.gl.texParameteri(
-            this.gl.TEXTURE_2D,
-            this.gl.TEXTURE_WRAP_T,
-            this.gl.CLAMP_TO_EDGE
-        );
-        this.gl.texParameteri(
-            this.gl.TEXTURE_2D,
-            this.gl.TEXTURE_MIN_FILTER,
-            this.gl.NEAREST
-        );
-        this.gl.texParameteri(
-            this.gl.TEXTURE_2D,
-            this.gl.TEXTURE_MAG_FILTER,
-            this.gl.NEAREST
-        );
-        this.gl.texImage2D(
-            this.gl.TEXTURE_2D,
-            0,
-            this.gl.RGBA,
-            this.gl.RGBA,
-            this.gl.UNSIGNED_BYTE,
-            img
-        );
+        this._texture = null;
+        this.src = img;
 
         let tmp: WebGLBuffer, x: number, y: number, w: number, h: number;
         for (let i in data) {
@@ -91,7 +66,6 @@ export class Spritesheet {
                     w, h
                 ]), this.gl.STATIC_DRAW
                 );
-
             }
             
             this.sprites[i] = ({
@@ -107,5 +81,22 @@ export class Spritesheet {
 
     get(index: string | number): _Sprite | undefined {
         return this.sprites[index];
+    }
+
+    get texture(): WebGLTexture {
+        if (this._texture === null) {
+            this._texture = this.base.loadTexture(this.src, this);
+        } else {
+            this.base.updateTextureBuffer(this);
+        }
+        return this._texture;
+    }
+
+    getTexture(): WebGLTexture {
+        return this.texture;
+    }
+
+    set texture(buffer: WebGLTexture) {
+        this._texture = buffer;
     }
 }
