@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Document</title>
+    <script src="../libs/stats.min.js"></script>
+    <script src="../libs/webgl-debug.js"></script>
+    <script src="/src/twgl.js/dist/4.x/twgl.js"></script>
+    <script src="../dist/Base.js"></script>
+    <script src="./cascade.js"></script>
+</head>
+
+<body>
+    <script>
+        var stats = new Stats();
+        stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+        document.body.appendChild(stats.dom);
+
+        function animate() {
+            stats.begin();
+            // monitored code goes here
+            stats.end();
+            requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
+    </script>
+    <div id="canvas">
+    </div>
+    <br>
+    <i>Demo is above</i>
+    <input type="button" id="play" onclick="play()" value="Play" disabled>
+    <br>
+    <div id="loaderDiv" style="display: none;">
+        <img src="./spritesheet/0.webp" id="0">
+        <img src="./spritesheet/1.webp" id="1">
+        <img src="./spritesheet/2.webp" id="2">
+        <img src="./spritesheet/3.webp" id="3">
+        <img src="./spritesheet/4.webp" id="4">
+        <img src="./spritesheet/5.webp" id="5">
+        <img src="./spritesheet/6.webp" id="6">
+        <img src="./spritesheet/7.webp" id="7">
+        <img src="./spritesheet/8.webp" id="8">
+        <img src="./spritesheet/9.webp" id="9">
+        <img src="./spritesheet/10.webp" id="10">
+        <img src="./spritesheet/11.webp" id="11">
+        <img src="./spritesheet/12.webp" id="12">
+        <img src="./spritesheet/13.webp" id="13">
+        <img src="./spritesheet/14.webp" id="14">
+        <img src="./spritesheet/15.webp" id="15">
+        <img src="./spritesheet/16.webp" id="16">
+        <img src="./spritesheet/17.webp" id="17">
+        <img src="./spritesheet/18.webp" id="18">
+        <img src="./spritesheet/19.webp" id="19">
+        <!-- <img src="./spritesheet/20.webp" id="20">
+        <img src="./spritesheet/21.webp" id="21">
+        <img src="./spritesheet/22.webp" id="22">
+        <img src="./spritesheet/23.webp" id="23">
+        <img src="./spritesheet/24.webp" id="24">
+        <img src="./spritesheet/25.webp" id="25">
+        <img src="./spritesheet/26.webp" id="26">
+        <img src="./spritesheet/27.webp" id="27">
+        <img src="./spritesheet/28.webp" id="28">
+        <img src="./spritesheet/29.webp" id="29">
+        <img src="./spritesheet/30.webp" id="30">
+        <img src="./spritesheet/31.webp" id="31">
+        <img src="./spritesheet/32.webp" id="32">
+        <img src="./spritesheet/33.webp" id="33">
+        <img src="./spritesheet/34.webp" id="34">
+        <img src="./spritesheet/35.webp" id="35">
+        <img src="./spritesheet/36.webp" id="36">
+        <img src="./spritesheet/37.webp" id="37">
+        <img src="./spritesheet/38.webp" id="38">
+        <img src="./spritesheet/39.webp" id="39">
+        <img src="./spritesheet/40.webp" id="40">
+        <img src="./spritesheet/41.webp" id="41">
+        <img src="./spritesheet/42.webp" id="42">
+        <img src="./spritesheet/43.webp" id="43">
+        <img src="./spritesheet/44.webp" id="44">
+        <img src="./spritesheet/45.webp" id="45">
+        <img src="./spritesheet/46.webp" id="46">
+        <img src="./spritesheet/47.webp" id="47">
+        <img src="./spritesheet/48.webp" id="48">
+        <img src="./spritesheet/49.webp" id="49">
+        <img src="./spritesheet/50.webp" id="50">
+        <img src="./spritesheet/51.webp" id="51">
+        <img src="./spritesheet/52.webp" id="52">
+        <img src="./spritesheet/53.webp" id="53">
+        <img src="./spritesheet/54.webp" id="54">
+        <img src="./spritesheet/55.webp" id="55">
+        <img src="./spritesheet/56.webp" id="56">
+        <img src="./spritesheet/57.webp" id="57">
+        <img src="./spritesheet/58.webp" id="58">
+        <img src="./spritesheet/59.webp" id="59">
+        <img src="./spritesheet/60.webp" id="60">
+        <img src="./spritesheet/61.webp" id="61">
+        <img src="./spritesheet/62.webp" id="62">
+        <img src="./spritesheet/63.webp" id="63">
+        <img src="./spritesheet/64.webp" id="64">
+        <img src="./spritesheet/65.webp" id="65">
+        <img src="./spritesheet/66.webp" id="66">
+        <img src="./spritesheet/67.webp" id="67">
+        <img src="./spritesheet/68.webp" id="68">
+        <img src="./spritesheet/69.webp" id="69">
+        <img src="./spritesheet/70.webp" id="70">
+        <img src="./spritesheet/71.webp" id="71">
+        <img src="./spritesheet/72.webp" id="72">
+        <img src="./spritesheet/73.webp" id="73">
+        <img src="./spritesheet/74.webp" id="74">
+        <img src="./spritesheet/75.webp" id="75">
+        <img src="./spritesheet/76.webp" id="76">
+        <img src="./spritesheet/77.webp" id="77">
+        <img src="./spritesheet/78.webp" id="78">
+        <img src="./spritesheet/79.webp" id="79">
+        <img src="./spritesheet/80.webp" id="80">
+        <img src="./spritesheet/81.webp" id="81">
+        <img src="./spritesheet/82.webp" id="82">
+        <img src="./spritesheet/83.webp" id="83">
+        <img src="./spritesheet/84.webp" id="84">
+        <img src="./spritesheet/85.webp" id="85">
+        <img src="./spritesheet/86.webp" id="86">
+        <img src="./spritesheet/87.webp" id="87">
+        <img src="./spritesheet/88.webp" id="88">
+        <img src="./spritesheet/89.webp" id="89">
+        <img src="./spritesheet/90.webp" id="90">
+        <img src="./spritesheet/91.webp" id="91">
+        <img src="./spritesheet/92.webp" id="92">
+        <img src="./spritesheet/93.webp" id="93">
+        <img src="./spritesheet/94.webp" id="94"> -->
+    </div>
+    <script>
+        init();
+    </script>
+</body>
+
+</html>

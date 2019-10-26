@@ -3,41 +3,58 @@
 let base, mainTl;
 let spriteheets;
 let img;
-let assets;
+let assets, assetLoader;
 let audio;
 
 function init() {
-    base = new Base(false, 650, 450, 'canvas', 25, false, [0, 0, 0, -1]);
+    base = new Base(false, 650, 450, 'canvas', 25, false, [0, 0, 0, -1], 6);
     mainTl = new Timeline(false, 13);
     base.mainTimeline = mainTl;
     assets = new AssetMenager(base);
-    let assetLoader = new AssetLoader();
+    assetLoader = new AssetLoader(false);
     assetLoader.pushManifest([
         {id: 'sp', src: './spritesheet/spritesheet.json', type: 'spritesheet'},
-        {id: '0.png', src: './spritesheet/0.png', type: 'image'},
-        {id: '1.png', src: './spritesheet/1.png', type: 'image'},
-        {id: '2.png', src: './spritesheet/2.png', type: 'image'},
-        {id: '3.png', src: './spritesheet/3.png', type: 'image'},
-        {id: '4.png', src: './spritesheet/4.png', type: 'image'},
-        {id: '5.png', src: './spritesheet/5.png', type: 'image'},
-        {id: '6.png', src: './spritesheet/6.png', type: 'image'}
+        {id: '0.png', src: './spritesheet/0.webp', type: 'image'},
+        {id: '1.png', src: './spritesheet/1.webp', type: 'image'},
+        {id: '2.png', src: './spritesheet/2.webp', type: 'image'},
+        {id: '3.png', src: './spritesheet/3.webp', type: 'image'},
+        {id: '4.png', src: './spritesheet/4.webp', type: 'image'},
+        {id: '5.png', src: './spritesheet/5.webp', type: 'image'},
+        {id: '6.png', src: './spritesheet/6.webp', type: 'image'}
     ])
 
     assetLoader.download().then(() => {
         assets.loadAssets(assetLoader);
         assets.createAllSprites();
+        for (let i in assets.spritesheets) assets.spritesheets[i].texture;
         createAnimation();
     });
 }
 
 class dummy {
-    draw() {
-        try {
-            this.audio.currentTime = 0
-            this.audio.play();
-        } catch (error) {
-            console.error(error);
+    constructor() {
+        this.context = new AudioContext();
+        this.audio = this.context.createBufferSource();
+        this.audio.connect(this.context.destination);
+    }
+
+    async load(src) {
+        let req = new XMLHttpRequest();
+        req.responseType = 'arraybuffer';
+        req.onload = async () => {
+            this.audio.buffer = await this.context.decodeAudioData(req.response);
+            this.audio.playbackRate.value = 0.993;
+            document.getElementById('play').disabled = false;
         }
+        req.open('GET', src);
+        req.send();
+    }
+
+    draw() {
+        if (this.context.state === 'suspended') {
+            this.context.resume();
+        }
+        this.audio.start(0);
     }
 }
 
@@ -48,12 +65,15 @@ class dd {
 }
 
 let ds = 1.09999084;
+
 // let ds2 = 1;
 let ds2 = 1.09996033;
 function createAnimation() {
     // Layer 1
     let brown = new Rectangle(base, 650, 450, [185, 92, 0, -1]);
     let green = new Rectangle(base, 650, 450, [108, 132, 0, -1]);
+    let colGreen = new Color([108, 132, 0, -1]);
+    let colBrown = new Color([185, 92, 0, -1]);
     {
 
         mainTl.set({data:{}, start: 1473, duration: 101, layer: 0}, brown)
@@ -95,9 +115,9 @@ function createAnimation() {
     let shape_194 = new Timeline(true);
     shape_194.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 193'));
     let shape_248 = new Timeline(true);
-    shape_248.set({data: {}}, assets.get('image 247'));
+    shape_248.set({data: {pos:{x: -325, y: -225}}}, assets.get('image 247'));
     let shape_256 = new Timeline(true);
-    shape_256.set({data: {}}, assets.get('image 255'));
+    shape_256.set({data: {pos:{x: -325, y: -225}}}, assets.get('image 255'));
     let shape_46 = new Timeline(true);
     shape_46.set({data: {pos: {x: -325, y: -223}}}, assets.get('image 45'));
     let shape_48 = new Timeline(true);
@@ -194,18 +214,33 @@ function createAnimation() {
         let shape_236 = new Timeline(true);
         shape_236.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 235'));
         let shape_244 = new Timeline(true);
-        shape_244.set({data: {pos: {x: -1444, y: -225}}}, assets.get('image 243'));
+        shape_244.set({data: {pos: {x: -1444, y: -225}, scale:{x:3}}}, assets.get('image 243'));
         let shape_246 = new Timeline(true);
-        shape_246.set({data: {pos: {x: -1457, y: -225}}}, assets.get('image 245'));
+        shape_246.set({data: {pos: {x: -1457, y: -225}, scale:{x:3}}}, assets.get('image 245'));
         let shape_262 = new Timeline(true);
-        shape_262.set({data: {}}, assets.get('image 261'));
+        shape_262.set({data: {pos:{x: -325, y: -225}}}, assets.get('image 261'));
         let shape_268 = new Timeline(true);
-        shape_268.set({data: {}}, assets.get('image 267'));
+        shape_268.set({data: {pos:{x: -325, y: -225}}}, assets.get('image 267'));
         let shape_282 = new Timeline(true);
         shape_282.set({data: {pos: {x: -400, y: -225}}}, assets.get('image 281'));
 
         let noise = new Timeline(true);
         noise.set({data:{}}, assets.get('image 277')).set({data:{}}, assets.get('image 271'))
+        let t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 83'));
+        let shape_84 = new TimelineInstance(base, t, colGreen);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 87'));
+        let shape_88 = new TimelineInstance(base, t, colGreen);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 91'));
+        let shape_92 = new TimelineInstance(base, t, colGreen);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 47'));
+        let shape_48 = new TimelineInstance(base, t, colGreen);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 45'));
+        let shape_46 = new TimelineInstance(base, t, colGreen);
         let dance_1 = new Timeline(true);
         dance_1.set({data:{pos:{x:147.6,y:225}}, layer: 0}, shape_84)
             .set({data:{pos:{x:150,y:225}}, duration:10})
@@ -245,7 +280,7 @@ function createAnimation() {
             .set({data:{pos:{x:333.85,y:224.95}, scale:{x:ds,y:ds}}}) // Empty 1143-1167
             .fromTo({data:{pos:{x:311.95,y:224.95}, scale:{x:ds,y:ds}}, to:{pos:{x:323.9,y:224.95}, scale:{x:ds,y:ds}}, start:1168, duration:68}, shape_96)
             .set({data:{pos:{x:323.9,y:224.95}, scale:{x:ds,y:ds}}})
-            .fromTo({data:{pos:{x:325,y:225}, scale:{x:ds,y:ds}}, to:{pos:{x:324.95,y:224.95}, scale:{x:ds,y:ds}}, duration:37}, shape_126)
+            .fromTo({data:{pos:{x:325,y:225}}, to:{pos:{x:324.95,y:224.95}}, duration:37}, shape_126)
             .set({data:{pos:{x:324.95,y:224.95}, scale:{x:ds,y:ds}}, duration: 113}, shape_134) // Empty 1387-1418
             .set({data:{pos:{x:324.95,y:224.95}, scale:{x:ds,y:ds}}, start:1419}, shape_154)
             .set({data:{pos:{x:324.95,y:224.95}, scale:{x:ds,y:ds}}}, shape_148)
@@ -352,131 +387,131 @@ function createAnimation() {
             .set({data:{pos:{x:340.25,y:224.95},scale:{x:ds,y:ds}}}) // Empty 2374-2411
             .fromTo({data:{pos:{x:308.9,y:224.95},scale:{x:ds,y:ds}}, to:{pos:{x:321.1,y:224.95},scale:{x:ds,y:ds}},start: 2412, duration:49}, shape_236)
             .set({data:{pos:{x:321.1,y:224.95},scale:{x:ds,y:ds}}})
-            .set({data:{x:1517.3,y:224.95},scale:{x:ds,y:ds}}, shape_244)
-            .set({data:{x:840.8,y:224.95},scale:{x:ds,y:ds}})
-            .set({data:{x:324.95,y:224.95},scale:{x:ds,y:ds}})
-            .set({data:{x:1517.3,y:224.95},scale:{x:ds,y:ds}})
-            .set({data:{x:840.8,y:224.95},scale:{x:ds,y:ds}})
-            .set({data:{x:324.95,y:224.95},scale:{x:ds,y:ds}})
-            .set({data:{x:1453.5,y:224.95},scale:{x:ds,y:ds}}, shape_246)
-            .set({data:{x:855.1,y:224.95},scale:{x:ds,y:ds}})
-            .set({data:{x:324.95,y:224.95},scale:{x:ds,y:ds}})
-            .set({data:{x:1453.5,y:224.95},scale:{x:ds,y:ds}})
-            .set({data:{x:855.1,y:224.95},scale:{x:ds,y:ds}})
-            .set({data:{x:324.95,y:224.95},scale:{x:ds,y:ds}})
-            .set({data:{x:310.0,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:310.2,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:310.4,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:310.6,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:310.8,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:311.0,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:311.2,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:311.4,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:311.6,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:311.8,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:312.0,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:312.2,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:312.4,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:312.6,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:312.8,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:313.0,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:313.2,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:313.4,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:313.6,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:313.8,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:314.0,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:314.25,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:314.45,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:314.65,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:314.85,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:315.05,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:315.25,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:315.45,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:315.65,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:315.85,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:316.05,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:316.25,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:316.45,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:316.65,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:316.85,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:317.05,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:317.25,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:317.45,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:317.65,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:317.85,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:318.05,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:318.25,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:318.45,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:318.65,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:318.85,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:319.05,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:319.25,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:319.45,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:319.65,y:225},scale:{x:ds2,y:ds2}}, shape_248)
-            .set({data:{x:319.85,y:225},scale:{x:ds2,y:ds2}}, shape_256)
-            .set({data:{x:305.9,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:306.5,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:306.25,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:306.45,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:306.6,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:306.8,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:307,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:307.2,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:307.35,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:307.5,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:307.75,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:307.9,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:308.05,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:308.3,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:308.45,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:308.7,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:308.8,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:309,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:309.25,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:309.4,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:309.55,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:309.8,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:309.95,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:310.15,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:310.35,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:310.5,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:310.7,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:310.9,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:311.05,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:311.25,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:311.45,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:311.65,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:311.8,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:312,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:312.2,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:312.35,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:312.55,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:312.75,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:312.9,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:313.1,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:313.3,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:313.45,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:313.7,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:313.85,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:314,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:314.25,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:314.4,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:314.55,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:314.8,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:314.95,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:315.15,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:315.35,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:315.5,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:315.7,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:315.9,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:316.05,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:316.25,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:316.45,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:316.65,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:316.8,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:317,y:224.95},scale:{x:ds,y:ds}}, shape_262)
-            .set({data:{x:317.2,y:224.95},scale:{x:ds,y:ds}}, shape_268)
-            .set({data:{x:317.35,y:224.95},scale:{x:ds,y:ds}}, shape_262)
+            .set({data:{pos:{x:1517.3,y:224.95},scale:{x:ds,y:ds}}}, shape_244)
+            .set({data:{pos:{x:840.8,y:224.95},scale:{x:ds,y:ds}}})
+            .set({data:{pos:{x:324.95,y:224.95},scale:{x:ds,y:ds}}})
+            .set({data:{pos:{x:1517.3,y:224.95},scale:{x:ds,y:ds}}})
+            .set({data:{pos:{x:840.8,y:224.95},scale:{x:ds,y:ds}}})
+            .set({data:{pos:{x:324.95,y:224.95},scale:{x:ds,y:ds}}})
+            .set({data:{pos:{x:1453.5,y:224.95},scale:{x:ds,y:ds}}}, shape_246)
+            .set({data:{pos:{x:855.1,y:224.95},scale:{x:ds,y:ds}}})
+            .set({data:{pos:{x:324.95,y:224.95},scale:{x:ds,y:ds}}})
+            .set({data:{pos:{x:1453.5,y:224.95},scale:{x:ds,y:ds}}})
+            .set({data:{pos:{x:855.1,y:224.95},scale:{x:ds,y:ds}}})
+            .set({data:{pos:{x:324.95,y:224.95},scale:{x:ds,y:ds}}})
+            .set({data:{pos:{x:310.0,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:310.2,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:310.4,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:310.6,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:310.8,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:311.0,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:311.2,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:311.4,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:311.6,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:311.8,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:312.0,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:312.2,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:312.4,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:312.6,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:312.8,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:313.0,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:313.2,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:313.4,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:313.6,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:313.8,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:314.0,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:314.25,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:314.45,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:314.65,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:314.85,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:315.05,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:315.25,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:315.45,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:315.65,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:315.85,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:316.05,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:316.25,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:316.45,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:316.65,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:316.85,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:317.05,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:317.25,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:317.45,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:317.65,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:317.85,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:318.05,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:318.25,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:318.45,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:318.65,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:318.85,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:319.05,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:319.25,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:319.45,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:319.65,y:225},scale:{x:ds2,y:ds2}}}, shape_248)
+            .set({data:{pos:{x:319.85,y:225},scale:{x:ds2,y:ds2}}}, shape_256)
+            .set({data:{pos:{x:305.9,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:306.5,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:306.25,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:306.45,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:306.6,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:306.8,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:307,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:307.2,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:307.35,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:307.5,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:307.75,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:307.9,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:308.05,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:308.3,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:308.45,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:308.7,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:308.8,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:309,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:309.25,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:309.4,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:309.55,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:309.8,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:309.95,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:310.15,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:310.35,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:310.5,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:310.7,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:310.9,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:311.05,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:311.25,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:311.45,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:311.65,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:311.8,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:312,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:312.2,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:312.35,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:312.55,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:312.75,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:312.9,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:313.1,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:313.3,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:313.45,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:313.7,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:313.85,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:314,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:314.25,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:314.4,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:314.55,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:314.8,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:314.95,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:315.15,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:315.35,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:315.5,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:315.7,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:315.9,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:316.05,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:316.25,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:316.45,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:316.65,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:316.8,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:317,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
+            .set({data:{pos:{x:317.2,y:224.95},scale:{x:ds,y:ds}}}, shape_268)
+            .set({data:{pos:{x:317.35,y:224.95},scale:{x:ds,y:ds}}}, shape_262)
             .set({data:{}, duration:87}, noise)
             .fromTo({data:{pos:{x:279.95,y:224.95},scale:{x:0.99998474,y:0.99998474}}, to:{pos:{x:324.9,y:224.95},scale:{x:0.99998474,y:0.99998474}}, duration: 62}, shape_282)
             .set({data:{pos:{x:324.9,y:224.95},scale:{x:0.99998474,y:0.99998474}}}) // Empty 2737-2773
@@ -588,7 +623,7 @@ function createAnimation() {
         let shape_123 = new Timeline(true);
         shape_123.set({data: {pos: {x: -325.5, y: -225}}}, assets.get('image 122'));
         let shape_128 = new Timeline(true);
-        shape_128.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 127'));
+        shape_128.set({data: {}}, assets.get('image 127'));
         let shape_130 = new Timeline(true);
         shape_130.set({data: {pos: {x: -325, y: -226}}}, assets.get('image 129'));
         let shape_132 = new Timeline(true);
@@ -616,7 +651,40 @@ function createAnimation() {
         let shape_284 = new Timeline(true);
         shape_284.set({data: {pos: {x: -400, y: -225}}}, assets.get('image 283'));
 
+        let t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 159'));
+        let shape_160 = new TimelineInstance(base, t, colBrown);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 161'));
+        let shape_162 = new TimelineInstance(base, t, colBrown);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 163'));
+        let shape_164 = new TimelineInstance(base, t, colBrown);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 165'));
+        let shape_166 = new TimelineInstance(base, t, colBrown);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 137'));
+        let shape_138 = new TimelineInstance(base, t, colBrown);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 141'));
+        let shape_142 = new TimelineInstance(base, t, colBrown);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: 325, y: -225}, scale:{x: -1}}}, assets.get('image 137'));
+        let shape_144 = new TimelineInstance(base, t, colBrown);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: 325, y: -225}, scale:{x: -1}}}, assets.get('image 141'));
+        let shape_146 = new TimelineInstance(base, t, colBrown);
+        
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 93'));
+        let shape_94 = new TimelineInstance(base, t, colGreen);
+
         let black = new Rectangle(base, 650, 450, [0, 0, 0, -1]);
+        let shape_152_col_1 = new TimelineInstance(base, shape_152, new Color([185, 92, 0, -1]), false);
+        let shape_152_col_2 = new TimelineInstance(base, shape_152, new Color([108, 132, 0, -1]), false);
+        let shape_156_col_1 = new TimelineInstance(base, shape_156, new Color([185, 92, 0, -1]), false);
+        let shape_156_col_2 = new TimelineInstance(base, shape_156, new Color([108, 132, 0, -1]), false);
 
         mainTl.fromTo({data:{pos:{x:296,y:208},scale:{x:ds,y:ds}, alpha:0}, to:{pos:{x:301.65,y:211.55},scale:{x:1.09994507,y:1.09994507},alpha:0.921875}, start:149, duration: 12, layer: 3}, shape_30)
             .set({data:{pos:{x:301.65,y:211.55},scale:{x:1.09994507,y:1.09994507}, alpha:0.921875}})
@@ -674,7 +742,7 @@ function createAnimation() {
             .set({data:{pos:{x:356.8,y:224.95},scale:{x:ds,y:ds}}}) // Empty 1143-1168
             .fromTo({data:{pos:{x:310.95,y:224.95},scale:{x:ds,y:ds}}, to:{pos:{x:336.05,y:224.95},scale:{x:ds,y:ds}}, start:1168, duration:68}, shape_123)
             .set({data:{pos:{x:336.05,y:224.95},scale:{x:ds,y:ds}}})
-            .set({data:{pos:{x:325,y:225}}, duration:11}, shape_128)
+            .set({data:{}, duration:11}, shape_128)
             .set({data:{pos:{x:323,y:226}}}, shape_130)
             .set({data:{pos:{x:325,y:226}}, duration:11})
             .set({data:{pos:{x:323,y:225}}})
@@ -695,11 +763,12 @@ function createAnimation() {
             .set({data:{pos:{x:324.95,y:224.95},scale:{x:ds,y:ds}},duration:11}, shape_136)
             .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}}, shape_140)
             .set({data:{pos:{x:324.95,y:224.95},scale:{x:ds,y:ds}}}) // Empty 1384-1418
-            .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}, start:1419},shape_152) // Color switch start
-            .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}})
-            .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}},shape_156)
-            .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}}) // Color switch end
-            .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}, duration: 13})
+            // .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}, start:1419},shape_152) // Color switch start
+            .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}, start:1419},shape_152_col_1) // Color switch start
+            .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}},shape_152_col_2)
+            .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}},shape_156_col_1)
+            .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}},shape_156_col_2) // Color switch end
+            .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}, duration: 13}, shape_156)
             .set({data:{pos:{x:324.95,y:229.25},scale:{x:ds,y:ds}}}, shape_158)
             .set({data:{pos:{x:324.95,y:227.1},scale:{x:ds,y:ds}}, duration: 12})
             .set({data:{pos:{x:324.95,y:229.25},scale:{x:ds,y:ds}}}, shape_156)
@@ -869,6 +938,16 @@ function createAnimation() {
         shape_266.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 265'));
         let shape_286 = new Timeline(true);
         shape_286.set({data: {pos: {x: -325, y: -325}}}, assets.get('image 285'));
+
+        let t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 189'));
+        let shape_190 = new TimelineInstance(base, t, colBrown);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 191'));
+        let shape_192 = new TimelineInstance(base, t, colBrown);
+        t = new Timeline(true);
+        t.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 193'));
+        let shape_194 = new TimelineInstance(base, t, colBrown);
 
         mainTl.set({data:{pos:{x:296,y:208},scale:{x:ds,y:ds},alpha:0}, start: 149, layer:4}, shape_34)
         .fromTo({data:{pos:{x: 296.45,y:208.25},scale:{x:1.09994507,y:1.09994507},alpha:0.078125}, to:{pos:{x:297.4,y:208.85},scale:{x:1.09994507,y:1.09994507}, alpha:0.23046875}, duration:2}, shape_34)
@@ -1183,8 +1262,11 @@ function createAnimation() {
         shape_250.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 249'));
         let shape_274 = new Timeline(true);
         shape_274.set({data: {pos: {x: -375, y: -225}}}, assets.get('image 273'));
+        let shape_291 = new Timeline(true);
+        shape_291.set({data: {pos:{x:-325,y:-325}}}, assets.get('image 290'));
         let sprite_292 = new Timeline(true);
-        // sprite_292.set({data: {pos: {x: -375, y: -225}}}, assets.get('image 291'));
+        sprite_292.fromTo({data: {angle: 0}, to:{angle:360}, duration: 1800}, shape_291);
+        let spinner = new TimelineInstance(base, sprite_292);
 
         let white = new Rectangle(base, 650, 450, [-1,-1,-1,-1]);
         let light = new Timeline(true);
@@ -1414,7 +1496,7 @@ function createAnimation() {
             .to({data:{pos:{x:328.85,y:225},alpha:0},duration:12})
             .set({data:{pos:{x:328.85,y:225},alpha:0}}) // Empty 2687-3073
 
-            .set({data:{pos:{x:325,y:225},scale:{x:0.999905512,y:0.999905512},angle:29.9990872,alpha:0},start:3074},sprite_292)
+            .set({data:{pos:{x:325,y:225},scale:{x:0.999905512,y:0.999905512},angle:29.9990872,alpha:0},start:3074}, spinner)
             .set({data:{pos:{x:325,y:225},scale:{x:0.995735771,y:0.995735771},angle:29.8589034,alpha:0.01171875}})
             .fromTo({data:{pos:{x:325,y:225},scale:{x:0.993008509,y:0.993008509},angle:29.858889,alpha:0.01171875},to:{pos:{x:325,y:225},scale:{x:0.601767256,y:0.601767256},angle:29.8596694,alpha:0.98828125},duration:144})
             .set({data:{pos:{x:325,y:225},scale:{x:0.601767256,y:0.601767256},angle:29.8596694,alpha:0.98828125}})
@@ -1670,6 +1752,7 @@ function createAnimation() {
     {
         let shape_254 = new Timeline(true);
         shape_254.set({data: {pos: {x: -325, y: -225}}}, assets.get('image 253'));
+
     
         mainTl.fromTo({data:{pos:{x:288,y:225}},to:{pos:{x:302.9,y:225}},start:2474,duration:50,layer:10},shape_254)
             .to({data:{pos:{x:306.5,y:225},alpha:0},duration:12})
@@ -1677,18 +1760,26 @@ function createAnimation() {
     }
 
     audio = new dummy();
+    audio.load('./sound.mp3');
 
     mainTl.set({data:{pos:{x: 0, y: 0}}, layer: 12, start: 60}, audio);
     // mainTl.set({data:{pos:{x: 0, y: 0}}, layer: 12, start: 0}, new dd());
     // mainTl.set({data:{pos:{x: 0, y: 0}}, layer: 12, start: 3074}, new dd());
     // mainTl.set({data:{pos:{x: 0, y: 0}}, layer: 0, start: 74}, audio);
 
-    audio.audio = document.getElementById('audio');
-    audio.audio.playbackRate = 0.993;
+    // audio.audio.playbackRate = 0.993;
 
     // base.play();
 }
 
 function play(){
     base.play();
+}
+
+function helper(frame = 0) {
+    base.renderer.frame = frame;
+    base.renderer.isPlaying = true;
+    base.renderer.frameUpdated = true;
+    base.renderer.render();
+    base.renderer.isPlaying = false;
 }

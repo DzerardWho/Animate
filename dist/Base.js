@@ -1,3 +1,5 @@
+function NOOP() { }
+
 const degToRad = Math.PI / 180;
 function computeMatrix(_in, out, pos, scale, width, height, trans, angle, padding) {
     let [a, b, , d, e, , g, h] = _in;
@@ -94,7 +96,7 @@ class Data {
                 if (data.transformationPoint.x) {
                     this.transformationPoint.x = data.transformationPoint.x;
                 }
-                if (data.scale.y) {
+                if (data.transformationPoint.y) {
                     this.transformationPoint.y = data.transformationPoint.y;
                 }
             }
@@ -137,6 +139,9 @@ class Element {
         this.object = obj;
         this.transMatrix = identity();
         this.continueFrom = continueFromFrame || 0;
+    }
+    update(frame) {
+        this.object.update(frame);
     }
     draw(parentMatrix, alpha, frame, duration) {
         let progress;
@@ -306,13 +311,46 @@ class Timeline {
         this.lastUsed.from = data.to;
         return this;
     }
+    toSet(data, dur, obj) {
+        this.to(data, obj);
+        data.duration = dur;
+        this.set(data);
+    }
+    fromToSet(data, dur, obj) {
+        this.fromTo(data, obj);
+        data.data = data.to;
+        data.duration = dur;
+        this.set(data);
+    }
+    update(frame) {
+        let timeFrame, _frame;
+        if (this.loop) {
+            frame %= this.duration;
+        }
+        else if (frame >= this.duration) {
+            frame = this.duration - 1;
+        }
+        this.layers.forEach((layer) => {
+            timeFrame = layer.findByFrame(frame);
+            if (!timeFrame) {
+                return;
+            }
+            _frame = frame - timeFrame.start;
+            timeFrame.elements.forEach((element) => {
+                element.update(_frame);
+            });
+        });
+    }
     draw(matrix, alpha = 1, frame) {
         if (alpha) {
             let timeFrame, _frame;
+            if (this.loop) {
+                frame %= this.duration;
+            }
+            else if (frame >= this.duration) {
+                frame = this.duration - 1;
+            }
             this.layers.forEach((layer) => {
-                if (this.loop) {
-                    frame %= this.duration;
-                }
                 timeFrame = layer.findByFrame(frame);
                 if (!timeFrame) {
                     return;
@@ -326,16 +364,85 @@ class Timeline {
     }
 }
 
-const dvs = `precision mediump float;
+class TimelineInstance {
+    constructor(base, timeline, useColor = null, useMask = false) {
+        this.frame = 0;
+        this.base = base;
+        this.timeline = timeline;
+        this.gl = base.gl;
+        this.projectionMatrix = base.projectionMatrixAndSize;
+        if (useColor) {
+            this.setUpForFramebuffer();
+            this.program = base.colorProgram;
+            this.draw = this.drawAndModify;
+            this.color = useColor;
+            this.uniforms = { uSampler: this.texture, uTransMatrix: this.projectionMatrix };
+        }
+        else {
+            this.draw = this.basicDraw;
+        }
+    }
+    reset() {
+        this.frame = 0;
+    }
+    update() {
+        ++this.frame;
+        this.timeline.update(this.frame);
+    }
+    setUpForFramebuffer() {
+        this.texture = this.gl.createTexture();
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.base.canvas.width, this.base.canvas.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+        this.framebuffer = this.gl.createFramebuffer();
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer);
+        this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, this.texture, 0);
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        this.bufferInfo = this.base.defaultBufferInfo;
+    }
+    basicDraw(matrix, alpha) {
+        this.timeline.draw(matrix, alpha, this.frame);
+    }
+    drawAndModify(matrix, alpha) {
+        this.prevFramebuffer = this.base.lastUsedFramebuffer;
+        this.base.lastUsedFramebuffer = this.framebuffer;
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+        this.clear();
+        this.basicDraw(matrix, 1);
+        this.base.lastUsedFramebuffer = this.prevFramebuffer;
+        if (this.base.lastUsedProgram !== this.program) {
+            this.base.lastUsedProgram = this.program;
+        }
+        twgl.setBuffersAndAttributes(this.gl, this.program, this.bufferInfo);
+        this.uniforms['uColor'] = this.color.mixAlpha(alpha);
+        twgl.setUniforms(this.program, this.uniforms);
+        this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+    }
+    get loop() {
+        return this.timeline.loop;
+    }
+    get duration() {
+        return this.timeline.duration;
+    }
+    clear() {
+        this.gl.clearColor(0, 0, 0, 0);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
+}
 
-attribute vec2 aPosition;
+const colorShapeVertexShader = `precision mediump float;
 
-uniform mat3 transMatrix;
+attribute vec2 aPos;
+
+uniform mat3 uTransMatrix;
 
 void main(){
-    gl_Position = vec4((transMatrix * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
+    gl_Position = vec4((uTransMatrix * vec3(aPos, 1.0)).xy, 0.0, 1.0);
 }`;
-const dfs = `precision mediump float;
+const colorShapeFragmentShader = `precision mediump float;
 
 uniform vec4 uColor;
 
@@ -344,28 +451,77 @@ void main(){
     color.rgb *= color.a;
     gl_FragColor = color;
 }`;
-const dsvs = `precision mediump float;
+const spriteVertexShader = `precision mediump float;
 
-attribute vec2 aPosition;
-attribute vec2 aTextureCoords;
+attribute vec2 aPos;
+attribute vec2 aTexCoords;
 
-uniform mat3 transMatrix;
+uniform mat3 uTransMatrix;
 
-varying vec2 f_texCoord;
+varying vec2 vTexCoord;
 
 void main(){
-    f_texCoord = aTextureCoords;
-    gl_Position = vec4((transMatrix * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
+    vTexCoord = aTexCoords;
+    gl_Position = vec4((uTransMatrix * vec3(aPos, 1.0)).xy, 0.0, 1.0);
 }`;
-const dsfs = `precision mediump float;
+const spriteFragmentShader = `precision mediump float;
 
-varying vec2 f_texCoord;
-uniform float alpha;
-uniform sampler2D sampler;
+varying vec2 vTexCoord;
+uniform float uAlpha;
+uniform sampler2D uSampler;
 
 void main(){
-    vec4 color = texture2D(sampler, f_texCoord);
-    color.a *= alpha;
+    vec4 color = texture2D(uSampler, vTexCoord);
+    color.a *= uAlpha;
+    color.rgb *= color.a;
+	gl_FragColor = color;
+}`;
+const timelineVertexShader = `precision mediump float;
+
+attribute vec2 aPos;
+
+uniform mat3 uTransMatrix;
+
+varying vec2 vTexCoord;
+
+void main(){
+    vTexCoord = aPos;
+    gl_Position = vec4((uTransMatrix * vec3(aPos, 1.0)).xy, 0.0, 1.0);
+}`;
+const colorTimelineFragmentShader = `precision mediump float;
+
+varying vec2 vTexCoord;
+uniform vec4 uColor;
+uniform sampler2D uSampler;
+
+void main(){
+    vec4 color = uColor;
+    color *= texture2D(uSampler, vTexCoord).a;
+    gl_FragColor = color;
+}`;
+const maskTimelineFragmentShader = `precision mediump float;
+
+varying vec2 vTexCoord;
+uniform float uAlpha;
+uniform sampler2D uSampler;
+uniform sampler2D uMask;
+
+void main(){
+    vec4 color = texture2D(uSampler, vTexCoord);
+    color.a *= uAlpha * texture2D(uMask, vTexCoord).a;
+    color.rgb *= color.a;
+	gl_FragColor = color;
+}`;
+const colorAndMaskTimelineFragmentShader = `precision mediump float;
+
+varying vec2 vTexCoord;
+uniform vec4 uColor;
+uniform sampler2D uSampler;
+uniform sampler2D uMask;
+
+void main(){
+    vec4 color = texture2D(uSampler, vTexCoord);
+    color.a *= uColor.a * texture2D(uMask, vTexCoord).r;
     color.rgb *= color.a;
 	gl_FragColor = color;
 }`;
@@ -375,22 +531,9 @@ class Renderable {
         this.base = base;
         this.gl = base.gl;
         this.loop = true;
-        this.unitBuffer = base.unitBuffer;
-        this.attribs = {};
-        this.uniforms = {};
         this.width = w;
         this.height = h;
-    }
-    getProgramData(attribs, uniforms) {
-        if (!this.program) {
-            return;
-        }
-        for (let i of attribs) {
-            this.attribs[i] = this.gl.getAttribLocation(this.program, i);
-        }
-        for (let i of uniforms) {
-            this.uniforms[i] = this.gl.getUniformLocation(this.program, i);
-        }
+        this.update = NOOP;
     }
 }
 
@@ -475,38 +618,25 @@ class Rectangle extends Renderable {
         super(base, w, h);
         this.program = base.defaultShapeProgram;
         this.color = new Color(c);
-        this.hasTransparency = false;
-        this.getProgramData([
-            'aPosition'
-        ], [
-            'uColor',
-            'transMatrix',
-        ]);
+        this.bufferInfo = base.defaultBufferInfo;
     }
     draw(matrix, alpha) {
         if (this.base.lastUsedProgram !== this.program) {
             this.base.lastUsedProgram = this.program;
         }
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
-        this.gl.vertexAttribPointer(this.attribs['aPosition'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-        this.gl.enableVertexAttribArray(this.attribs['aPosition']);
-        this.gl.uniform4fv(this.uniforms['uColor'], this.color.mixAlpha(alpha));
-        this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
+        twgl.setBuffersAndAttributes(this.gl, this.program, this.bufferInfo);
+        twgl.setUniforms(this.program, { uColor: this.color.mixAlpha(alpha), uTransMatrix: matrix, uAlpha: alpha });
         this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
     }
 }
 
 class Spritesheet {
     constructor(base, data, img) {
+        this.base = base;
         this.gl = base.gl;
         this.sprites = {};
-        this.texture = this.gl.createTexture();
-        this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
-        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
+        this._texture = null;
+        this.src = img;
         let tmp, x, y, w, h;
         for (let i in data) {
             x = data[i].x / img.width;
@@ -539,20 +669,49 @@ class Spritesheet {
     get(index) {
         return this.sprites[index];
     }
+    get texture() {
+        if (this._texture === null) {
+            this._texture = this.base.loadTexture(this.src, this);
+        }
+        else {
+            this.base.updateTextureBuffer(this);
+        }
+        return this._texture;
+    }
+    getTexture() {
+        return this.texture;
+    }
+    set texture(buffer) {
+        this._texture = buffer;
+    }
+}
+
+function createBufferInfoFromBuffers(gl, buffers, srcBufferInto) {
+    let out = {
+        numElements: 0,
+        attribs: {}
+    };
+    if (srcBufferInto) {
+        for (let i in srcBufferInto.attribs) {
+            out.attribs[i] = srcBufferInto.attribs[i];
+        }
+    }
+    for (let i in buffers) {
+        out.attribs[i] = {};
+        out.attribs[i]['buffer'] = buffers[i];
+        out.attribs[i]['numComponents'] = 2;
+    }
+    return out;
 }
 
 class Sprite extends Renderable {
     constructor(base, img, index) {
         if (!(img instanceof Spritesheet)) {
             super(base, img.width, img.height);
-            this.texture = this.gl.createTexture();
-            this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
-            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
-            this.textureCoords = this.unitBuffer;
+            this.bufferInfo = base.defaultSpriteBufferInfo;
+            this.getTexture = (() => {
+                return this.texture;
+            }).bind(this);
         }
         else {
             if (!index) {
@@ -560,41 +719,39 @@ class Sprite extends Renderable {
             }
             let sprite = img.get(index);
             super(base, sprite.width, sprite.height);
-            this.textureCoords = sprite.texCoords;
-            this.texture = sprite.source.texture;
+            this.bufferInfo = createBufferInfoFromBuffers(this.gl, { aTexCoords: sprite.texCoords }, base.defaultBufferInfo);
+            this.getTexture = (() => {
+                return this.src.getTexture();
+            }).bind(this);
             this.padding = { x: sprite.pad_x, y: sprite.pad_y };
         }
+        this._texture = null;
+        this.src = img;
         this.loop = true;
         this.program = base.defaultSpriteProgram;
-        this.getProgramData([
-            'aPosition',
-            'aTextureCoords'
-        ], [
-            'transMatrix',
-            'sampler',
-            'alpha'
-        ]);
     }
     draw(matrix, alpha) {
         if (this.base.lastUsedProgram !== this.program) {
             this.base.lastUsedProgram = this.program;
         }
-        if (this.base.lastUsedTexture !== this.texture) {
-            this.base.lastUsedTexture = this.texture;
+        if (this.base.lastUsedTexture !== this._texture) {
+            this.base.lastUsedTexture = this._texture;
         }
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.textureCoords);
-        this.gl.vertexAttribPointer(this.attribs["aTextureCoords"], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-        this.gl.enableVertexAttribArray(this.attribs["aTextureCoords"]);
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
-        this.gl.vertexAttribPointer(this.attribs['aPosition'], 2, this.gl.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-        this.gl.enableVertexAttribArray(this.attribs['aPosition']);
-        this.gl.uniform1i(this.uniforms['sampler'], 0);
-        this.gl.uniformMatrix3fv(this.uniforms['transMatrix'], false, matrix);
-        this.gl.uniform1f(this.uniforms['alpha'], alpha);
+        twgl.setBuffersAndAttributes(this.gl, this.program, this.bufferInfo);
+        twgl.setUniforms(this.program, { uSampler: this.getTexture(), uTransMatrix: matrix, uAlpha: alpha });
         this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
     }
-    switchBlendFunc() {
-        this.blendFunc = this.blendFunc === this.gl.ONE ? this.gl.SRC_ALPHA : this.gl.ONE;
+    get texture() {
+        if (this._texture === null) {
+            this._texture = this.base.loadTexture(this.src, this);
+        }
+        else {
+            this.base.updateTextureBuffer(this);
+        }
+        return this._texture;
+    }
+    set texture(value) {
+        this._texture = value;
     }
 }
 
@@ -631,7 +788,7 @@ class Item {
                     this.result = new Audio();
                     break;
                 case 'image':
-                    this.result = new Image();
+                    this.result = document.createElement('img');
                     break;
                 default:
                     break;
@@ -643,7 +800,6 @@ class Item {
                 case 'webp':
                 case 'jpg':
                 case 'jpeg':
-                    this.transparent = transparent || false;
                     this.type = 'image';
                     this.result = new Image();
                     break;
@@ -667,11 +823,18 @@ class Item {
 }
 
 class AssetLoader {
-    constructor(maxRetries = 3) {
+    constructor(xml = false, maxRetries = 3) {
         this.maxRetries = maxRetries;
         this.downloadQueue = [];
         this.downloaded = [];
         this.errors = [];
+        this.loaderDiv = document.getElementById('loader');
+        this.xml = xml;
+        if (!this.loaderDiv) {
+            this.loaderDiv = document.createElement('div');
+            this.loaderDiv.style.display = 'none';
+            document.body.appendChild(this.loaderDiv);
+        }
     }
     download(mode = 0) {
         return new Promise((resolve, reject) => {
@@ -681,58 +844,75 @@ class AssetLoader {
                 resolve(this.downloaded);
             }
             for (let element of downloadQueue) {
-                let request = new XMLHttpRequest();
-                if (element.type === 'image') {
-                    request.responseType = 'blob';
-                }
-                request.onload = async () => {
-                    if (request.status !== 200) {
-                        this.errors.push(element);
+                if (!this.xml && element.type === 'image') {
+                    element.result.onload = () => {
+                        this.loaderDiv.appendChild(element.result);
+                        this.downloaded.push(element);
+                        downloadQueue.splice(downloadQueue.indexOf(element), 1);
                         if (this.isDone()) {
                             resolve(this.downloaded);
                         }
+                    };
+                    element.result.src = element.src;
+                }
+                else {
+                    let request = new XMLHttpRequest();
+                    if (element.type === 'image') {
+                        request.responseType = 'blob';
                     }
-                    switch (element.type) {
-                        case 'image':
-                            await new Promise((resolve) => {
-                                element.result.src = URL.createObjectURL(new Blob([request.response], { type: `image/${element.fileFormat}` }));
-                                element.result.onload = () => {
-                                    URL.revokeObjectURL(element.result.src);
-                                    resolve();
-                                };
-                            });
-                            break;
-                        case 'audio':
-                            await new Promise((resolve) => {
-                                element.result.src = URL.createObjectURL(new Blob([request.response], { type: `audio/${element.fileFormat}` }));
-                                element.result.onload = () => {
-                                    URL.revokeObjectURL(element.result.src);
-                                    resolve();
-                                };
-                            });
-                            break;
-                        case 'json':
-                        case 'spritesheet':
-                            element.result = JSON.parse(request.responseText);
-                            break;
-                        case 'js':
-                            element.result = request.responseText;
-                            break;
-                        case 'anime':
-                            let t = new DOMParser();
-                            element.result = t.parseFromString(request.responseText, 'text/xml');
+                    else if (element.type === 'audio') {
+                        request.responseType = 'arraybuffer';
                     }
-                    this.downloaded.push(element);
-                    downloadQueue.splice(downloadQueue.indexOf(element), 1);
-                    if (this.isDone()) {
-                        resolve(this.downloaded);
-                    }
-                };
-                request.onerror = () => {
-                    reject(new Error(`Error while downloading file: ${request.statusText}`));
-                };
-                request.open('GET', element.src, true);
-                request.send();
+                    request.onload = async () => {
+                        if (request.status !== 200) {
+                            this.errors.push(element);
+                            if (this.isDone()) {
+                                resolve(this.downloaded);
+                            }
+                        }
+                        switch (element.type) {
+                            case 'image':
+                                await new Promise((resolve) => {
+                                    element.result.src = URL.createObjectURL(new Blob([request.response], { type: `image/${element.fileFormat}` }));
+                                    element.result.onload = () => {
+                                        URL.revokeObjectURL(element.result.src);
+                                        this.loaderDiv.appendChild(element.result);
+                                        resolve();
+                                    };
+                                });
+                                break;
+                            case 'audio':
+                                await new Promise((resolve) => {
+                                    element.result.src = URL.createObjectURL(new Blob([request.response], { type: `audio/${element.fileFormat}` }));
+                                    element.result.onload = () => {
+                                        URL.revokeObjectURL(element.result.src);
+                                        resolve();
+                                    };
+                                });
+                                break;
+                            case 'json':
+                            case 'spritesheet':
+                                element.result = JSON.parse(request.responseText);
+                                break;
+                            case 'js':
+                                element.result = request.responseText;
+                                break;
+                            case 'anime':
+                                let t = new DOMParser();
+                                element.result = t.parseFromString(request.responseText, 'text/xml');
+                        }
+                        this.downloaded.push(element);
+                        downloadQueue.splice(downloadQueue.indexOf(element), 1);
+                        if (this.isDone()) {
+                            resolve(this.downloaded);
+                        }
+                    };
+                    request.onerror = () => {
+                        reject(new Error(`Error while downloading file: ${request.statusText}`));
+                    };
+                    request.open('GET', element.src, true);
+                    request.send();
+                }
             }
         });
     }
@@ -752,7 +932,7 @@ class AssetLoader {
     }
     pushManifest(manifest) {
         for (let i of manifest) {
-            this.pushFile(i.id, i.src, i.fileFormat, i.type, i.transparent);
+            this.pushFile(i.id, i.src, i.fileFormat, i.type);
         }
     }
     isDone() {
@@ -840,6 +1020,7 @@ class Renderer {
         this.timeToNextUpdate = this.timing;
         this.lastUpdate = 0;
         this.frame = 0;
+        this.lastFrameRequest = null;
         this.mainTimeline = null;
         this.isPlaying = false;
         this.projectionMatrix = createProjection(width, height);
@@ -847,7 +1028,7 @@ class Renderer {
         this.render = this.render.bind(this);
         this.update = this.update.bind(this);
         if (!base.debug) {
-            this.debugIntervals = () => { };
+            this.debugIntervals = NOOP;
         }
     }
     play() {
@@ -872,30 +1053,25 @@ class Renderer {
             console.log(this.timeToNextUpdate);
     }
     async update() {
-        if (this.isPlaying) {
-            ++this.frame;
-            this.frameUpdated = true;
-            requestAnimationFrame(this.render);
-            this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
-            setTimeout(this.update, this.timeToNextUpdate);
-            this.debugIntervals();
-            this.lastUpdate = performance.now();
-        }
+        ++this.frame;
+        this.frameUpdated = true;
+        this.lastFrameRequest = requestAnimationFrame(this.render);
+        this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
+        setTimeout(this.update, this.timeToNextUpdate);
+        this.debugIntervals();
+        this.lastUpdate = performance.now();
+        this.mainTimeline.update(this.frame);
     }
     async render() {
         if (!this.mainTimeline) {
             throw new Error("There is nothing to render (mainTimeline isn't set)");
         }
-        if (!(this.frameUpdated && this.isPlaying)) {
+        if (!(this.frameUpdated)) {
             return;
         }
         this.frameUpdated = false;
         this.clear();
         this.mainTimeline.draw(this.projectionMatrix, 1, this.frame);
-        if (!this.mainTimeline.loop && this.frame >= this.mainTimeline.duration - 1) {
-            this.pause();
-            return;
-        }
     }
     clear() {
         this.gl.clearColor(this.backgroundColor.r, this.backgroundColor.g, this.backgroundColor.b, this.backgroundColor.a);
@@ -927,7 +1103,7 @@ function createDebugGl(gl) {
 }
 
 class Base {
-    constructor(debug = false, width, height, canvas_id, fps = 25, webgl2 = false, bgC = [-1, -1, -1, -1]) {
+    constructor(debug = false, width, height, canvas_id, fps = 25, webgl2 = false, bgC = [-1, -1, -1, -1], maxTextureBufferSize = 20) {
         this.canvas = document.getElementById(canvas_id);
         if (this.canvas.nodeName != "CANVAS") {
             this.canvas = document.createElement("canvas");
@@ -946,83 +1122,29 @@ class Base {
         }
         this.debug = debug;
         this.setCanvasSize(width, height);
-        this.lastUsedProgram = null;
         this.renderer = new Renderer(this, fps, width, height, bgC instanceof Color ? bgC : new Color(bgC));
+        this.projectionMatrixAndSize = computeMatrix(this.renderer.projectionMatrix, new Float32Array(9), { x: 0, y: height }, { x: 1, y: -1 }, width, height, { x: 0, y: 0 }, 0, { x: 0, y: 0 });
         this.gl.frontFace(this.gl.CW);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
         this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-        this.defaultShapeProgram = this.newProgram();
-        this.defaultSpriteProgram = this.newProgram(dsvs, dsfs);
-        this.unitBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.unitBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
-            0, 0,
-            0, 1,
-            1, 0,
-            1, 1
-        ]), this.gl.STATIC_DRAW);
+        this.defaultShapeProgram = twgl.createProgramInfo(this.gl, [colorShapeVertexShader, colorShapeFragmentShader]);
+        this.defaultSpriteProgram = twgl.createProgramInfo(this.gl, [spriteVertexShader, spriteFragmentShader]);
+        this.maskProgram = twgl.createProgramInfo(this.gl, [timelineVertexShader, maskTimelineFragmentShader]);
+        this.colorProgram = twgl.createProgramInfo(this.gl, [timelineVertexShader, colorTimelineFragmentShader]);
+        this.colorAndMaskProgram = twgl.createProgramInfo(this.gl, [timelineVertexShader, colorAndMaskTimelineFragmentShader]);
+        this.unitBuffer = twgl.createBufferFromArray(this.gl, new Float32Array([0, 0, 0, 1, 1, 0, 1, 1]), 'Float32Array');
+        this.defaultBufferInfo = createBufferInfoFromBuffers(this.gl, { aPos: this.unitBuffer });
+        this.defaultSpriteBufferInfo = createBufferInfoFromBuffers(this.gl, { aPos: this.unitBuffer, aTexCoords: this.unitBuffer });
+        this.lastUsedFramebuffer = null;
+        this.maxTextureBufferSize = maxTextureBufferSize;
+        this.textureBuffers = [];
+        this.audioContext = new AudioContext();
     }
     setCanvasSize(width, height) {
         this.canvas.width = width;
         this.canvas.height = height;
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-    }
-    compileShader(src, type) {
-        let t;
-        if (type == "vs") {
-            t = this.gl.VERTEX_SHADER;
-        }
-        else if (type == "fs") {
-            t = this.gl.FRAGMENT_SHADER;
-        }
-        else {
-            throw new Error("Podano nie prawidłowy typ shader'a");
-        }
-        let s = this.gl.createShader(t);
-        this.gl.shaderSource(s, src);
-        this.gl.compileShader(s);
-        if (!this.gl.getShaderParameter(s, this.gl.COMPILE_STATUS)) {
-            throw new Error(this.gl.getShaderInfoLog(s));
-        }
-        return s;
-    }
-    compileProgram(vs, fs) {
-        let p = this.gl.createProgram();
-        this.gl.attachShader(p, vs);
-        this.gl.attachShader(p, fs);
-        this.gl.linkProgram(p);
-        if (!this.gl.getProgramParameter(p, this.gl.LINK_STATUS)) {
-            throw new Error(this.gl.getProgramInfoLog(p));
-        }
-        return p;
-    }
-    newVertexShader(src) {
-        try {
-            return this.compileShader(src, "vs");
-        }
-        catch (e) {
-            console.error(e);
-            return -1;
-        }
-    }
-    newFragmentShader(src) {
-        try {
-            return this.compileShader(src, "fs");
-        }
-        catch (e) {
-            console.error(e);
-            return -1;
-        }
-    }
-    newProgram(vs = dvs, fs = dfs) {
-        try {
-            return this.compileProgram(this.newVertexShader(vs), this.newFragmentShader(fs));
-        }
-        catch (e) {
-            console.error(e);
-            return -1;
-        }
     }
     get mainTimeline() {
         return this.renderer.mainTimeline;
@@ -1044,7 +1166,7 @@ class Base {
     }
     set lastUsedProgram(value) {
         this._lastUsedProgram = value;
-        this.gl.useProgram(value);
+        this.gl.useProgram(value.program);
     }
     get lastUsedTexture() {
         return this._lastUsedTexture;
@@ -1054,7 +1176,46 @@ class Base {
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_2D, value);
     }
+    get lastUsedFramebuffer() {
+        return this._lastUsedFramebuffer;
+    }
+    set lastUsedFramebuffer(value) {
+        this._lastUsedFramebuffer = value;
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, value);
+    }
+    loadTexture(img, src) {
+        let buffer;
+        if (this.textureBuffers.length < this.maxTextureBufferSize) {
+            buffer = {
+                texture: this.gl.createTexture(),
+                src: src
+            };
+            this.gl.bindTexture(this.gl.TEXTURE_2D, buffer.texture);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
+        }
+        else {
+            buffer = this.textureBuffers.shift();
+            buffer.src.texture = null;
+            buffer.src = src;
+            this.gl.bindTexture(this.gl.TEXTURE_2D, buffer.texture);
+            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
+        }
+        this.textureBuffers.push(buffer);
+        return buffer.texture;
+    }
+    updateTextureBuffer(src) {
+        let buffer = this.textureBuffers.findIndex(element => {
+            return element === src;
+        });
+        if (buffer !== -1) {
+            this.textureBuffers.push(this.textureBuffers.splice(buffer, 1)[0]);
+        }
+    }
 }
 
-// export { AssetLoader, AssetMenager, Base, Color, Data, Element, Item, Linear, Rectangle, Renderable, Sprite, Spritesheet, Timeframe, TimeframeLayer, Timeline, computeMatrix, dfs, dsfs, dsvs, dvs, projectionMatrix };
+// export { AssetLoader, AssetMenager, Base, Color, Data, Element, Item, Linear, NOOP, Rectangle, Renderable, Renderer, Sprite, Spritesheet, Timeframe, TimeframeLayer, Timeline, TimelineInstance, colorAndMaskTimelineFragmentShader, colorShapeFragmentShader, colorShapeVertexShader, colorTimelineFragmentShader, computeMatrix, maskTimelineFragmentShader, projectionMatrix, spriteFragmentShader, spriteVertexShader, timelineVertexShader };
 //# sourceMappingURL=Base.js.map
