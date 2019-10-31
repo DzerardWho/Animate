@@ -96,5 +96,5 @@ function con(){
     john.addObjectToLayer(hat, {pos:{x: 544.8, y: 712.85}}, {pos:{x: 545.35, y: 714.35}}, 164, 6, 6, 0);
 
     // base.mainTimeline.duration = 170;
-    base.play();
+    base.resume();
 }

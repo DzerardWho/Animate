@@ -91,5 +91,5 @@ function con(){
     john.addObjectToLayer(hat, {pos:{x: 456.45, y: 468.4}}, {pos:{x: 544.8, y: 712.85}}, 0, 164, 6, 0);
     john.addObjectToLayer(hat, {pos:{x: 544.8, y: 712.85}}, {pos:{x: 545.35, y: 714.35}}, 164, 6, 6, 0);
 
-    base.play();
+    base.resume();
 }

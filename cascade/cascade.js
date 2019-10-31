@@ -36,5 +36,5 @@ function createAnimation() {
 }
 
 function play(){
-    base.play();
+    base.resume();
 }

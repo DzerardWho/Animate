@@ -212,6 +212,7 @@ class Timeline {
         this.loop = loop;
         this.layers = [];
         this.duration = 0;
+        this.labels = {};
         this.createLayer();
         this.createMultipleLayers(initLayers - 1);
         this.lastUsed = {
@@ -362,6 +363,13 @@ class Timeline {
             });
         }
     }
+    addLabel(label, frame) {
+        if (typeof (label) === 'string' && typeof (frame) === 'number' && frame >= 0)
+            this.labels[label] = frame;
+    }
+    getLabel(label) {
+        return this.labels[label] || -1;
+    }
 }
 
 class TimelineInstance {
@@ -381,12 +389,20 @@ class TimelineInstance {
         else {
             this.draw = this.basicDraw;
         }
+        this.play();
     }
     reset() {
         this.frame = 0;
     }
+    pause() {
+        this.playing = false;
+    }
+    play() {
+        this.playing = true;
+    }
     update() {
-        ++this.frame;
+        if (this.playing)
+            ++this.frame;
         this.timeline.update(this.frame);
     }
     setUpForFramebuffer() {
@@ -430,6 +446,28 @@ class TimelineInstance {
     clear() {
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
+    goto(dest) {
+        let frame;
+        if (typeof (dest) === 'string') {
+            frame = this.timeline.getLabel(dest);
+        }
+        else {
+            frame = dest;
+        }
+        if (frame !== -1)
+            this.frame = frame;
+    }
+    gotoAndPlay(dest) {
+        this.goto(dest);
+        this.playing = true;
+    }
+    gotoAndPause(dest) {
+        this.goto(dest);
+        this.playing = false;
+    }
+    gotoAndStop(dest) {
+        this.gotoAndPause(dest);
     }
 }
 
@@ -607,9 +645,18 @@ class Color {
         return this._buffer;
     }
     mixAlpha(alpha) {
+        this.buffer[0] *= alpha;
+        this.buffer[1] *= alpha;
+        this.buffer[2] *= alpha;
         this.buffer[3] *= alpha;
         this.dirty = true;
         return this._buffer;
+    }
+    static getColor(value) {
+        if (value instanceof Color) {
+            return value;
+        }
+        return new Color(value);
     }
 }
 
@@ -1019,10 +1066,9 @@ class Renderer {
         this.timing = 1000 / fps;
         this.timeToNextUpdate = this.timing;
         this.lastUpdate = 0;
-        this.frame = 0;
         this.lastFrameRequest = null;
         this.mainTimeline = null;
-        this.isPlaying = false;
+        this.resumed = false;
         this.projectionMatrix = createProjection(width, height);
         this.backgroundColor = bgColor;
         this.render = this.render.bind(this);
@@ -1031,9 +1077,9 @@ class Renderer {
             this.debugIntervals = NOOP;
         }
     }
-    play() {
-        if (!this.isPlaying) {
-            this.isPlaying = true;
+    resume() {
+        if (!this.resumed) {
+            this.resumed = true;
             this.render();
             this.lastUpdate = performance.now();
             setTimeout(() => {
@@ -1041,41 +1087,54 @@ class Renderer {
             }, this.timeToNextUpdate);
         }
     }
-    pause() {
-        if (this.isPlaying) {
+    suspend() {
+        if (this.resumed) {
             clearInterval(this.updateInterval);
             this.timeToNextUpdate -= performance.now() - this.lastUpdate;
-            this.isPlaying = false;
+            this.resumed = false;
         }
+    }
+    play() {
+        this.mainTimeline.play();
+    }
+    pause() {
+        this.mainTimeline.pause();
     }
     debugIntervals() {
         if (this.timeToNextUpdate <= 37 || this.timeToNextUpdate >= 43)
             console.log(this.timeToNextUpdate);
     }
     async update() {
-        ++this.frame;
-        this.frameUpdated = true;
-        this.lastFrameRequest = requestAnimationFrame(this.render);
-        this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
-        setTimeout(this.update, this.timeToNextUpdate);
-        this.debugIntervals();
-        this.lastUpdate = performance.now();
-        this.mainTimeline.update(this.frame);
+        if (this.resumed) {
+            this.frameUpdated = true;
+            this.lastFrameRequest = requestAnimationFrame(this.render);
+            this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
+            setTimeout(this.update, this.timeToNextUpdate);
+            this.debugIntervals();
+            this.lastUpdate = performance.now();
+            this.mainTimeline.update();
+        }
     }
     async render() {
         if (!this.mainTimeline) {
             throw new Error("There is nothing to render (mainTimeline isn't set)");
         }
-        if (!(this.frameUpdated)) {
+        if (!(this.frameUpdated && this.resumed)) {
             return;
         }
         this.frameUpdated = false;
         this.clear();
-        this.mainTimeline.draw(this.projectionMatrix, 1, this.frame);
+        this.mainTimeline.draw(this.projectionMatrix, 1);
     }
     clear() {
         this.gl.clearColor(this.backgroundColor.r, this.backgroundColor.g, this.backgroundColor.b, this.backgroundColor.a);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
+    get frame() {
+        return this.mainTimeline.frame;
+    }
+    set frame(value) {
+        this.mainTimeline.frame = value;
     }
 }
 
@@ -1127,7 +1186,6 @@ class Base {
         this.gl.frontFace(this.gl.CW);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
-        this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
         this.defaultShapeProgram = twgl.createProgramInfo(this.gl, [colorShapeVertexShader, colorShapeFragmentShader]);
         this.defaultSpriteProgram = twgl.createProgramInfo(this.gl, [spriteVertexShader, spriteFragmentShader]);
         this.maskProgram = twgl.createProgramInfo(this.gl, [timelineVertexShader, maskTimelineFragmentShader]);
@@ -1142,18 +1200,31 @@ class Base {
         this.audioContext = new AudioContext();
     }
     setCanvasSize(width, height) {
-        this.canvas.width = width;
-        this.canvas.height = height;
+		this.canvas.width = width;
+		this.textCanvas.width = width;
+		this.canvas.height = height;
+		this.textCanvas.height = height;
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     }
     get mainTimeline() {
         return this.renderer.mainTimeline;
     }
     set mainTimeline(value) {
-        if (!(value instanceof Timeline)) {
+        if (value instanceof Timeline) {
+            this.renderer.mainTimeline = new TimelineInstance(this, value);
+        }
+        else if (value instanceof TimelineInstance) {
+            this.renderer.mainTimeline = value;
+        }
+        else {
             return;
         }
-        this.renderer.mainTimeline = value;
+    }
+    resume() {
+        this.renderer.resume();
+    }
+    suspend() {
+        this.renderer.suspend();
     }
     play() {
         this.renderer.play();

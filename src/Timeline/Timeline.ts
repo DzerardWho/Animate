@@ -9,6 +9,10 @@ interface lastUsedData {
     layer: number;
 }
 
+interface Label {
+    [propName: string]: number
+}
+
 export class Timeline {
     loop: boolean;
     layers: Array<TimeframeLayer>;
@@ -17,11 +21,13 @@ export class Timeline {
     padding: vec2;
     width: number;
     height: number;
+    labels: Label;
 
     constructor(loop: boolean = false, initLayers?: number) {
         this.loop = loop;
         this.layers = [];
         this.duration = 0;
+        this.labels = {};
         this.createLayer();
         this.createMultipleLayers(initLayers - 1);
         this.lastUsed = {
@@ -202,5 +208,14 @@ export class Timeline {
                 });
             });
         }
+    }
+
+    addLabel(label: string, frame: number) {
+        if (typeof(label) === 'string' && typeof(frame) === 'number' && frame >= 0)
+            this.labels[label] = frame;
+    }
+
+    getLabel(label: string) {
+        return this.labels[label] || -1;
     }
 }

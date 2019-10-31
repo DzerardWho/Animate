@@ -22,6 +22,7 @@ export class TimelineInstance {
     width: number;
     height: number;
     padding: vec2;
+    playing: boolean;
 
     draw: ((arg1: Matrix, arg2: number) => void);
 
@@ -51,14 +52,23 @@ export class TimelineInstance {
         } else {
             this.draw = this.basicDraw;
         }
+        this.play();
     }
 
     reset() {
         this.frame = 0;
     }
 
+    pause() {
+        this.playing = false;
+    }
+
+    play() {
+        this.playing = true;
+    }
+
     update() {
-        ++this.frame;
+        if (this.playing) ++this.frame;
         this.timeline.update(this.frame);
     }
 
@@ -116,5 +126,30 @@ export class TimelineInstance {
     clear() {
         this.gl.clearColor(0,0,0,0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
+
+    private goto(dest: number | string) {
+        let frame: number;
+        if (typeof(dest) === 'string') {
+            frame = this.timeline.getLabel(dest);
+        } else {
+            frame = dest;
+        }
+        if (frame !== -1)
+            this.frame = frame;
+    }
+
+    gotoAndPlay(dest: number | string) {
+        this.goto(dest);
+        this.playing = true;
+    }
+
+    gotoAndPause(dest: number | string) {
+        this.goto(dest);
+        this.playing = false;
+    }
+
+    gotoAndStop(dest: number | string) {
+        this.gotoAndPause(dest);
     }
 }

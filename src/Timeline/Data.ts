@@ -43,12 +43,6 @@ export class Data {
     }
 
     getData(to: Data, progress: number) {
-        let alpha = this.alpha + (to.alpha - this.alpha) * progress;
-        if (alpha < 0) {
-            alpha = 0;
-        } else if (alpha > 1) {
-            alpha = 1
-        }
         return {
             pos: {
                 x: this.pos.x + (to.pos.x - this.pos.x) * progress,
@@ -63,7 +57,7 @@ export class Data {
                 x: this.transformationPoint.x + (to.transformationPoint.x - this.transformationPoint.x) * progress,
                 y: this.transformationPoint.y + (to.transformationPoint.y - this.transformationPoint.y) * progress,
             },
-            alpha: alpha
+            alpha: this.alpha + (to.alpha - this.alpha) * progress,
         }
     }
 }

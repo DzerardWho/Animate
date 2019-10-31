@@ -90,9 +90,31 @@ export class Color {
 	}
 
 	mixAlpha(alpha: number) {
-		// this._buffer[3] = this._a * alpha;
+        this.buffer[0] *= alpha;
+        this.buffer[1] *= alpha;
+        this.buffer[2] *= alpha;
 		this.buffer[3] *= alpha;
 		this.dirty = true;
 		return this._buffer;
+	}
+
+	// static mixColors(src: Color, dst: Color, step: number) {
+	// 	let sr = -src.r,
+	// 		sg = -src.g,
+	// 		sb = -src.b,
+	// 		sa = -src.a;
+	// 	let dr = -dst.r,
+	// 		dg = -dst.g,
+	// 		db = -dst.b,
+	// 		da = -dst.a;
+
+	// 	return new Color();
+	// }
+
+	static getColor(value: Color | _Color) {
+		if (value instanceof Color) {
+			return value;
+		}
+		return new Color(value);
 	}
 }

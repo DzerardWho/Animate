@@ -8,6 +8,7 @@ import { computeMatrix } from './Matrix';
 import { createBufferInfoFromBuffers } from './BufferInfo'
 import { Spritesheet } from './AssetManagement/Spritesheet';
 import { Sprite } from './Renderable/Sprite';
+import { TimelineInstance } from './Timeline/TimelineInstance';
 // import * as twgl from './twgl.js/dist/4.x/twgl';
 
 interface TextureBuffer {
@@ -18,6 +19,7 @@ interface TextureBuffer {
 export class Base {
 	canvas: HTMLCanvasElement;
 	textCanvas: HTMLCanvasElement;
+	textCtx: CanvasRenderingContext2D;
 	gl: WebGLRenderingContext;
 
 	renderer: Renderer;
@@ -61,6 +63,7 @@ export class Base {
 		if (this.canvas.nodeName != "CANVAS") {
 			this.canvas = document.createElement("canvas");
 			this.textCanvas = document.createElement('canvas');
+			this.textCtx = this.textCanvas.getContext("2d");
 			this.textCanvas.style.display = 'none';
 			document.getElementById(canvas_id).appendChild(this.canvas);
 			document.getElementById(canvas_id).appendChild(this.textCanvas);
@@ -88,7 +91,6 @@ export class Base {
 		this.gl.frontFace(this.gl.CW);
 		this.gl.enable(this.gl.BLEND);
 		this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
-		this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
 		this.defaultShapeProgram = twgl.createProgramInfo(this.gl, [colorShapeVertexShader, colorShapeFragmentShader])
 		this.defaultSpriteProgram = twgl.createProgramInfo(this.gl, [spriteVertexShader, spriteFragmentShader]);
@@ -108,7 +110,9 @@ export class Base {
 
 	setCanvasSize(width, height) {
 		this.canvas.width = width;
+		this.textCanvas.width = width;
 		this.canvas.height = height;
+		this.textCanvas.height = height;
 		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 	}
 
@@ -116,11 +120,22 @@ export class Base {
 		return this.renderer.mainTimeline;
 	}
 
-	set mainTimeline(value: Timeline) {
-		if (!(value instanceof Timeline)) {
+	set mainTimeline(value: Timeline | TimelineInstance) {
+		if (value instanceof Timeline) {
+			this.renderer.mainTimeline = new TimelineInstance(this, value);
+		} else if (value instanceof TimelineInstance) {
+			this.renderer.mainTimeline = value;
+		} else {
 			return;
 		}
-		this.renderer.mainTimeline = value;
+	}
+
+	resume() {
+		this.renderer.resume();
+	}
+
+	suspend() {
+		this.renderer.suspend();
 	}
 
 	play() {

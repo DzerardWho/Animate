@@ -51,6 +51,7 @@ class dummy {
     }
 
     draw() {
+        console.log(1);
         if (this.context.state === 'suspended') {
             this.context.resume();
         }
@@ -1773,13 +1774,13 @@ function createAnimation() {
 }
 
 function play(){
-    base.play();
+    base.resume();
 }
 
-function helper(frame = 0) {
+function helper(frame = 1) {
     base.renderer.frame = frame;
-    base.renderer.isPlaying = true;
+    base.renderer.resumed = true;
     base.renderer.frameUpdated = true;
     base.renderer.render();
-    base.renderer.isPlaying = false;
+    base.renderer.resumed = false;
 }

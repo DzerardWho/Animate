@@ -1,23 +1,22 @@
-import { Timeline } from './Timeline/Timeline'
 import { createProjection } from './Matrix'
 import { Base } from './Base'
 import { Color } from './Color'
 import { Matrix } from './types';
 import { NOOP } from './NOOP';
+import { TimelineInstance } from './Timeline/TimelineInstance';
 
 export class Renderer {
     gl: WebGLRenderingContext;
-    isPlaying: boolean;
+    resumed: boolean;
     timing: number;
     timeToNextUpdate: number;
     lastUpdate: number;
-    mainTimeline: Timeline;
+    mainTimeline: TimelineInstance;
     updateInterval: number;
-    frame: number;
+    // frame: number;
     projectionMatrix: Matrix;
     backgroundColor: Color;
     frameUpdated: boolean;
-    lastFrameRequest: number;
 
     constructor(base: Base, fps: number, width: number, height: number, bgColor: Color) {
         if (fps <= 0) {
@@ -28,10 +27,9 @@ export class Renderer {
         this.timing = 1000 / fps;
         this.timeToNextUpdate = this.timing;
         this.lastUpdate = 0;
-        this.frame = 0;
-        this.lastFrameRequest = null;
+        // this.frame = 0;
         this.mainTimeline = null;
-        this.isPlaying = false;
+        this.resumed = false;
         this.projectionMatrix = createProjection(width, height);
         this.backgroundColor = bgColor;
         this.render = this.render.bind(this);
@@ -42,9 +40,9 @@ export class Renderer {
         }
     }
 
-    play() {
-        if (!this.isPlaying) {
-            this.isPlaying = true;
+    resume() {
+        if (!this.resumed) {
+            this.resumed = true;
             this.render();
             this.lastUpdate = performance.now();
             setTimeout(() => {
@@ -54,12 +52,20 @@ export class Renderer {
         }
     }
 
-    pause() {
-        if (this.isPlaying) {
+    suspend() {
+        if (this.resumed) {
             clearInterval(this.updateInterval);
             this.timeToNextUpdate -= performance.now() - this.lastUpdate;
-            this.isPlaying = false;
+            this.resumed = false;
         }
+    }
+    
+    play() {
+        this.mainTimeline.play();
+    }
+
+    pause() {
+        this.mainTimeline.pause();
     }
 
     debugIntervals(){
@@ -68,32 +74,30 @@ export class Renderer {
     }
 
     async update() {
-        // if (this.isPlaying) {
-            ++this.frame;
+        if (this.resumed) {
+            // ++this.frame;
             this.frameUpdated = true;
-            // cancelAnimationFrame(this.lastFrameRequest);
-            this.lastFrameRequest = requestAnimationFrame(this.render);
+            requestAnimationFrame(this.render);
             // this.timeToNextUpdate = this.timing;
             this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
             setTimeout(this.update, this.timeToNextUpdate);
             this.debugIntervals();
             this.lastUpdate = performance.now();
-            this.mainTimeline.update(this.frame);
-        // }
+            this.mainTimeline.update();
+        }
     }
 
     async render() {
         if (!this.mainTimeline) {
             throw new Error("There is nothing to render (mainTimeline isn't set)");
         }
-        // if (!(this.frameUpdated && this.isPlaying)) {
-        if (!(this.frameUpdated)) {
+        if (!(this.frameUpdated && this.resumed)) {
             return;
         }
         // console.log('render');
         this.frameUpdated = false;
         this.clear();
-        this.mainTimeline.draw(this.projectionMatrix, 1, this.frame);
+        this.mainTimeline.draw(this.projectionMatrix, 1);
         // if (!this.mainTimeline.loop && this.frame >= this.mainTimeline.duration - 1){
         //     this.pause();
         //     return;
@@ -108,5 +112,13 @@ export class Renderer {
             this.backgroundColor.a
         );
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
+
+    get frame() {
+        return this.mainTimeline.frame;
+    }
+
+    set frame(value: number) {
+        this.mainTimeline.frame = value;
     }
 }
