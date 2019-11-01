@@ -104,13 +104,6 @@ class Data {
         }
     }
     getData(to, progress) {
-        let alpha = this.alpha + (to.alpha - this.alpha) * progress;
-        if (alpha < 0) {
-            alpha = 0;
-        }
-        else if (alpha > 1) {
-            alpha = 1;
-        }
         return {
             pos: {
                 x: this.pos.x + (to.pos.x - this.pos.x) * progress,
@@ -125,7 +118,7 @@ class Data {
                 x: this.transformationPoint.x + (to.transformationPoint.x - this.transformationPoint.x) * progress,
                 y: this.transformationPoint.y + (to.transformationPoint.y - this.transformationPoint.y) * progress,
             },
-            alpha: alpha
+            alpha: this.alpha + (to.alpha - this.alpha) * progress,
         };
     }
 }
@@ -207,8 +200,14 @@ class TimeframeLayer {
     }
 }
 
-class Timeline {
+class TimelineObject {
+    draw(...a) { }
+    update(...a) { }
+}
+
+class Timeline extends TimelineObject {
     constructor(loop = false, initLayers) {
+        super();
         this.loop = loop;
         this.layers = [];
         this.duration = 0;
@@ -372,8 +371,9 @@ class Timeline {
     }
 }
 
-class TimelineInstance {
+class TimelineInstance extends TimelineObject {
     constructor(base, timeline, useColor = null, useMask = false) {
+        super();
         this.frame = 0;
         this.base = base;
         this.timeline = timeline;
@@ -471,6 +471,84 @@ class TimelineInstance {
     }
 }
 
+class Renderable extends TimelineObject {
+    constructor(base, w, h) {
+        super();
+        this.base = base;
+        this.gl = base.gl;
+        this.loop = true;
+        this.width = w;
+        this.height = h;
+        this.update = NOOP;
+    }
+}
+
+class Font {
+    constructor(base, data = {}) {
+        this.base = base;
+        this.ctx = base.textCtx;
+        if (typeof (data) === 'string') {
+            this.font = data;
+            this.color = '#000000';
+            this.align = 'left';
+            this.baseline = 'top';
+        }
+        else {
+            this.font = (data.size || '12') + 'px ' + (data.font || 'arial');
+            if (data.weight)
+                this.font = data.weight + ' ' + this.font;
+            if (data.style)
+                this.font = data.style + ' ' + this.font;
+            this.align = data.align || 'left';
+            this.baseline = data.baseline || 'top';
+            this.color = data.color || '#000000';
+        }
+    }
+    setupCtx() {
+        this.ctx.font = this.font;
+        this.ctx.fillStyle = this.color;
+        this.ctx.textBaseline = this.baseline;
+        this.ctx.textAlign = this.align;
+    }
+}
+
+class TextObject extends Renderable {
+    constructor(base, w, h, font) {
+        super(base, w, h);
+        this.ctx = base.textCtx;
+        this.canvas = base.textCanvas;
+        this.program = base.defaultSpriteProgram;
+        this.bufferInfo = base.defaultSpriteBufferInfo;
+        this.texture = this.gl.createTexture();
+        this.font = new Font(base, font);
+        base.setupTexture(this.texture);
+    }
+    get text() {
+        return this._text;
+    }
+    set text(text) {
+        this._text = text;
+        this.renderText();
+    }
+    renderText() {
+        this.base.setupTextCanvas(this.width, this.height);
+        this.font.setupCtx();
+        this.ctx.fillText(this._text, 0, 0, this.width);
+        this.base.uploadTexture(this.texture, this.canvas);
+    }
+    draw(matrix, alpha) {
+        if (this.base.lastUsedProgram !== this.program) {
+            this.base.lastUsedProgram = this.program;
+        }
+        if (this.base.lastUsedTexture !== this.texture) {
+            this.base.lastUsedTexture = this.texture;
+        }
+        twgl.setBuffersAndAttributes(this.gl, this.program, this.bufferInfo);
+        twgl.setUniforms(this.program, { uSampler: this.texture, uTransMatrix: matrix, uAlpha: alpha });
+        this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+    }
+}
+
 const colorShapeVertexShader = `precision mediump float;
 
 attribute vec2 aPos;
@@ -563,17 +641,6 @@ void main(){
     color.rgb *= color.a;
 	gl_FragColor = color;
 }`;
-
-class Renderable {
-    constructor(base, w, h) {
-        this.base = base;
-        this.gl = base.gl;
-        this.loop = true;
-        this.width = w;
-        this.height = h;
-        this.update = NOOP;
-    }
-}
 
 class Color {
     constructor(r, g, b, a) {
@@ -1066,7 +1133,6 @@ class Renderer {
         this.timing = 1000 / fps;
         this.timeToNextUpdate = this.timing;
         this.lastUpdate = 0;
-        this.lastFrameRequest = null;
         this.mainTimeline = null;
         this.resumed = false;
         this.projectionMatrix = createProjection(width, height);
@@ -1107,7 +1173,7 @@ class Renderer {
     async update() {
         if (this.resumed) {
             this.frameUpdated = true;
-            this.lastFrameRequest = requestAnimationFrame(this.render);
+            requestAnimationFrame(this.render);
             this.timeToNextUpdate = this.timeToNextUpdate - (performance.now() - this.lastUpdate - this.timing);
             setTimeout(this.update, this.timeToNextUpdate);
             this.debugIntervals();
@@ -1167,6 +1233,7 @@ class Base {
         if (this.canvas.nodeName != "CANVAS") {
             this.canvas = document.createElement("canvas");
             this.textCanvas = document.createElement('canvas');
+            this.textCtx = this.textCanvas.getContext("2d");
             this.textCanvas.style.display = 'none';
             document.getElementById(canvas_id).appendChild(this.canvas);
             document.getElementById(canvas_id).appendChild(this.textCanvas);
@@ -1200,10 +1267,10 @@ class Base {
         this.audioContext = new AudioContext();
     }
     setCanvasSize(width, height) {
-		this.canvas.width = width;
-		this.textCanvas.width = width;
-		this.canvas.height = height;
-		this.textCanvas.height = height;
+        this.canvas.width = width;
+        this.textCanvas.width = width;
+        this.canvas.height = height;
+        this.textCanvas.height = height;
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     }
     get mainTimeline() {
@@ -1254,6 +1321,20 @@ class Base {
         this._lastUsedFramebuffer = value;
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, value);
     }
+    bindTexture(texture) {
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    }
+    setupTexture(texture) {
+        this.bindTexture(texture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+    }
+    uploadTexture(texture, src) {
+        this.bindTexture(texture);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, src);
+    }
     loadTexture(img, src) {
         let buffer;
         if (this.textureBuffers.length < this.maxTextureBufferSize) {
@@ -1261,20 +1342,14 @@ class Base {
                 texture: this.gl.createTexture(),
                 src: src
             };
-            this.gl.bindTexture(this.gl.TEXTURE_2D, buffer.texture);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
-            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
+            this.setupTexture(buffer.texture);
         }
         else {
             buffer = this.textureBuffers.shift();
             buffer.src.texture = null;
             buffer.src = src;
-            this.gl.bindTexture(this.gl.TEXTURE_2D, buffer.texture);
-            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
         }
+        this.uploadTexture(buffer.texture, img);
         this.textureBuffers.push(buffer);
         return buffer.texture;
     }
@@ -1286,7 +1361,12 @@ class Base {
             this.textureBuffers.push(this.textureBuffers.splice(buffer, 1)[0]);
         }
     }
+    setupTextCanvas(width, height) {
+        this.textCanvas.width = width;
+        this.textCanvas.height = height;
+        this.textCtx.clearRect(0, 0, width, height);
+    }
 }
 
-// export { AssetLoader, AssetMenager, Base, Color, Data, Element, Item, Linear, NOOP, Rectangle, Renderable, Renderer, Sprite, Spritesheet, Timeframe, TimeframeLayer, Timeline, TimelineInstance, colorAndMaskTimelineFragmentShader, colorShapeFragmentShader, colorShapeVertexShader, colorTimelineFragmentShader, computeMatrix, maskTimelineFragmentShader, projectionMatrix, spriteFragmentShader, spriteVertexShader, timelineVertexShader };
+// export { AssetLoader, AssetMenager, Base, Color, Data, Element, Font, Item, Linear, NOOP, Rectangle, Renderable, Renderer, Sprite, Spritesheet, TextObject, Timeframe, TimeframeLayer, Timeline, TimelineInstance, colorAndMaskTimelineFragmentShader, colorShapeFragmentShader, colorShapeVertexShader, colorTimelineFragmentShader, computeMatrix, maskTimelineFragmentShader, projectionMatrix, spriteFragmentShader, spriteVertexShader, timelineVertexShader };
 //# sourceMappingURL=Base.js.map

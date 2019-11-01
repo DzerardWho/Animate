@@ -2,9 +2,10 @@ import { Timeline } from './Timeline'
 import { Base } from '../Base';
 import { Color } from '../Color';
 import { Matrix, vec2 } from '../types';
+import { TimelineObject } from './TimelineObject';
 // import * as twgl from '../twgl.js/dist/4.x/twgl';
 
-export class TimelineInstance {
+export class TimelineInstance extends TimelineObject {
     gl: WebGLRenderingContext;
     base: Base;
     timeline: Timeline;
@@ -19,18 +20,17 @@ export class TimelineInstance {
     framebuffer: WebGLFramebuffer;
     prevFramebuffer: WebGLFramebuffer;
     uniforms: object;
-    width: number;
-    height: number;
-    padding: vec2;
     playing: boolean;
 
     draw: ((arg1: Matrix, arg2: number) => void);
 
     constructor(base: Base, timeline: Timeline, useColor: Color = null, useMask: boolean = false) {
+        super();
         this.frame = 0;
         this.base = base;
         this.timeline = timeline;
         this.gl = base.gl;
+        // this.loop = false; // (?)
         this.projectionMatrix = base.projectionMatrixAndSize;
         // if (useColor && useMask) {
         //     this.program = base.colorAndMaskProgram;

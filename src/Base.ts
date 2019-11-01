@@ -174,6 +174,46 @@ export class Base {
 		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, value);
 	}
 
+	bindTexture(texture: WebGLTexture) {
+		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+	}
+
+	setupTexture(texture: WebGLTexture) {
+		this.bindTexture(texture);
+		this.gl.texParameteri(
+			this.gl.TEXTURE_2D,
+			this.gl.TEXTURE_WRAP_S,
+			this.gl.CLAMP_TO_EDGE
+		);
+		this.gl.texParameteri(
+			this.gl.TEXTURE_2D,
+			this.gl.TEXTURE_WRAP_T,
+			this.gl.CLAMP_TO_EDGE
+		);
+		this.gl.texParameteri(
+			this.gl.TEXTURE_2D,
+			this.gl.TEXTURE_MIN_FILTER,
+			this.gl.NEAREST
+		);
+		this.gl.texParameteri(
+			this.gl.TEXTURE_2D,
+			this.gl.TEXTURE_MAG_FILTER,
+			this.gl.NEAREST
+		);
+	}
+
+	uploadTexture(texture: WebGLTexture, src: ImageData | HTMLImageElement | HTMLCanvasElement) {
+		this.bindTexture(texture);
+		this.gl.texImage2D(
+			this.gl.TEXTURE_2D,
+			0,
+			this.gl.RGBA,
+			this.gl.RGBA,
+			this.gl.UNSIGNED_BYTE,
+			src
+		);
+	}
+
 	loadTexture(img: ImageData | HTMLImageElement, src: Spritesheet | Sprite): WebGLTexture {
 		let buffer: TextureBuffer;
 		if (this.textureBuffers.length < this.maxTextureBufferSize) {
@@ -182,49 +222,13 @@ export class Base {
 				src: src
 			}
 
-			this.gl.bindTexture(this.gl.TEXTURE_2D, buffer.texture);
-			this.gl.texParameteri(
-				this.gl.TEXTURE_2D,
-				this.gl.TEXTURE_WRAP_S,
-				this.gl.CLAMP_TO_EDGE
-			);
-			this.gl.texParameteri(
-				this.gl.TEXTURE_2D,
-				this.gl.TEXTURE_WRAP_T,
-				this.gl.CLAMP_TO_EDGE
-			);
-			this.gl.texParameteri(
-				this.gl.TEXTURE_2D,
-				this.gl.TEXTURE_MIN_FILTER,
-				this.gl.NEAREST
-			);
-			this.gl.texParameteri(
-				this.gl.TEXTURE_2D,
-				this.gl.TEXTURE_MAG_FILTER,
-				this.gl.NEAREST
-			);
-			this.gl.texImage2D(
-				this.gl.TEXTURE_2D,
-				0,
-				this.gl.RGBA,
-				this.gl.RGBA,
-				this.gl.UNSIGNED_BYTE,
-				img
-			);
+			this.setupTexture(buffer.texture);
 		} else {
 			buffer = this.textureBuffers.shift();
 			buffer.src.texture = null;
 			buffer.src = src;
-			this.gl.bindTexture(this.gl.TEXTURE_2D, buffer.texture);
-			this.gl.texImage2D(
-				this.gl.TEXTURE_2D,
-				0,
-				this.gl.RGBA,
-				this.gl.RGBA,
-				this.gl.UNSIGNED_BYTE,
-				img
-			);
 		}
+		this.uploadTexture(buffer.texture, img);
 		this.textureBuffers.push(buffer);
 		return buffer.texture;
 	}
@@ -236,5 +240,11 @@ export class Base {
 		if (buffer !== -1) {
 			this.textureBuffers.push(this.textureBuffers.splice(buffer, 1)[0]);
 		}
+	}
+
+	setupTextCanvas(width: number, height: number) {
+		this.textCanvas.width = width;
+		this.textCanvas.height = height;
+		this.textCtx.clearRect(0, 0, width, height);
 	}
 }

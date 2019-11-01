@@ -1,6 +1,7 @@
 import { Matrix, timeElement, _Data, vec2, elementData } from '../types'
 import { TimeframeLayer } from './TimeframeLayer';
 import { Timeframe } from './Timeframe';
+import { TimelineObject } from './TimelineObject';
 
 interface lastUsedData {
     obj?: any;
@@ -13,17 +14,14 @@ interface Label {
     [propName: string]: number
 }
 
-export class Timeline {
-    loop: boolean;
+export class Timeline extends TimelineObject{
     layers: Array<TimeframeLayer>;
     lastUsed: lastUsedData;
     duration: number;
-    padding: vec2;
-    width: number;
-    height: number;
     labels: Label;
 
     constructor(loop: boolean = false, initLayers?: number) {
+        super();
         this.loop = loop;
         this.layers = [];
         this.duration = 0;

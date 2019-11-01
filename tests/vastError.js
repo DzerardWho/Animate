@@ -1138,6 +1138,13 @@ function createAnimation() {
         let record = new Timeline(true);
         record.set({data:{}},shape_288).set({data:{}},shape_289).set({data:{}},shape_293)
 
+        let text1 = new TextObject(base, 649, 50, {font: "courier-std, monospace", size: 18, weight: 'bold', color: '#B95C00'})
+        text1.text = 'ARCJEC: XDXD Why the fuck is she doing this NOW? XDXD';
+        let text2 = new TextObject(base, 649, 50, {font: "courier-std, monospace", size: 18, weight: 'bold', color: '#B95C00'})
+        text2.text = 'ARCJEC: XDXD ... XDXD';
+        let text3 = new TextObject(base, 649, 50, {font: "courier-std, monospace", size: 18, weight: 'bold', color: '#B95C00'})
+        text3.text = 'ARCJEC: XDXD Oh, fuck it. XDXD';
+
 
         mainTl.set({data:{pos:{x:296.45,y:208.25},scale:{x:1.09994507,y:1.09994507}, alpha:0.078125},start:150,layer:5}, shape_36)
             .set({data:{pos:{x:296.9,y:208.55},scale:{x:1.1915741,y:1.1915741}, alpha:0.1015625}})
@@ -1178,7 +1185,7 @@ function createAnimation() {
             .to({data:{pos:{x:326.4,y:213.75},scale:{x:1.07015991,y:1.07015991},alpha:0},duration:12})
             .set({data:{pos:{x:326.4,y:213.75},scale:{x:1.07015991,y:1.07015991},alpha:0}}) // Empty 762-926
 
-            // Text
+            .set({data: {pos:{x:32,y:390}},duration:33,start:927},text1)
             // Empty 960-973
 
             .fromTo({data:{pos:{x:353.5,y:224.95},scale:{x:1.09999084,y:1.09999084},alpha:0},to:{pos:{x:347.25,y:224.95},scale:{x:1.09999084,y:1.09999084}},start:974,duration:13}, shape_106)
@@ -1186,13 +1193,13 @@ function createAnimation() {
             .to({data:{pos:{x:323.3,y:224.95},scale:{x:1.09999084,y:1.09999084},alpha:0},duration:13})
             .set({data:{pos:{x:323.3,y:224.95},scale:{x:1.09999084,y:1.09999084},alpha:0}}) // Empty 1038-1040
 
-            // Text
-            .fromTo({data:{pos:{x:343.05,y:225},alpha:0},to:{pos:{x:339.25,y:225}},start:1074,duration:13}, shape_117)
+            .set({data: {pos:{x:32,y:390}},duration:33,start:1041},text2)
+            .fromTo({data:{pos:{x:343.05,y:225},alpha:0},to:{pos:{x:339.25,y:225}},duration:13}, shape_117)
             .to({data:{pos:{x:314,y:225}},duration:87})
             .to({data:{pos:{x:310.2,y:225},alpha:0},duration:13})
             .set({data:{pos:{x:310.2,y:225},alpha:0}}) // Empty 1188-1189
 
-            // Text
+            .set({data: {pos:{x:32,y:390}},duration:33,start:1190},text3)
             // Empty 1223-1373
             .set({data:{pos:{x:324.95,y:224.95},scale:{x:1.09999084,y:1.09999084}},start:1374,duration:45},shape_148) // Empty 1419-2361
 

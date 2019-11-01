@@ -2,26 +2,21 @@ import { Base } from '../Base'
 import { vec2 } from '../types';
 // import { ProgramInfo, BufferInfo } from '../twgl.js/dist/4.x/twgl';
 import { NOOP } from '../NOOP';
+import { TimelineObject } from '../Timeline/TimelineObject'
 
-export class Renderable {
+export class Renderable extends TimelineObject {
 	unitBuffer: WebGLBuffer;
 	bufferInfo: BufferInfo;
 	program: ProgramInfo;
 	gl: WebGLRenderingContext;
 	base: Base;
-	loop: boolean;
-	width: number;
-	height: number;
 	
-	padding: vec2;
-
-	update: () => void;
-
 	constructor(
 		base: Base,
 		w: number,
 		h: number
 	) {
+		super();
 		this.base = base;
 		this.gl = base.gl;
 		this.loop = true;
